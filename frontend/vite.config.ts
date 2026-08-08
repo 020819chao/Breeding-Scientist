@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
+const base = process.env.VITE_BASE_PATH ?? "/__frontend__/";
+
 export default defineConfig({
-  base: "/__frontend__/",
+  base,
   plugins: [vue()],
   server: {
     port: 5173,
