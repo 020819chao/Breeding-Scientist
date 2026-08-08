@@ -1,0 +1,342 @@
+{
+  "metadata": {
+    "name": "lightweight_foxtail_millet_kg_seed",
+    "version": "0.1.0",
+    "last_updated": "2026-07-18",
+    "scope": "Local seed knowledge graph for foxtail millet breeding hypotheses. Claims are clues that require source-aware validation."
+  },
+  "nodes": [
+    {
+      "id": "crop:foxtail_millet",
+      "name": "foxtail millet",
+      "type": "crop",
+      "aliases": ["Setaria italica", "谷子", "foxtail millet"],
+      "summary": "Foxtail millet is the target crop for the local grain-breeding knowledge graph.",
+      "source_refs": "local project scope",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "trait:dense_planting_architecture",
+      "name": "dense-planting plant architecture",
+      "type": "trait",
+      "aliases": ["耐密植株型", "plant architecture", "compact architecture"],
+      "summary": "Architecture traits relevant to high-density planting, including plant height, stem strength, panicle traits, and lodging risk.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "trait:lodging_resistance",
+      "name": "lodging resistance",
+      "type": "trait",
+      "aliases": ["倒伏抗性", "lodging risk", "stem strength"],
+      "summary": "Ability to maintain upright stems under dense planting, fertility, wind, rain, and high biomass conditions.",
+      "source_refs": "https://www.plantnutrifert.org/en/article/Y2024/I4/641",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "trait:yield_components",
+      "name": "yield components",
+      "type": "trait",
+      "aliases": ["single-spike grain weight", "1000-grain weight", "panicle length", "产量构成"],
+      "summary": "Foxtail millet yield-related components such as panicle length, single-spike weight, single-spike grain weight, and 1000-grain weight.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252; https://pmc.ncbi.nlm.nih.gov/articles/PMC4857278/",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "trait:early_maturity",
+      "name": "early maturity",
+      "type": "trait",
+      "aliases": ["early heading", "seedling-to-spike period", "早熟"],
+      "summary": "Earlier seedling-to-spike or maturity timing that can support adaptation and cropping-system fit.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "germplasm:ARCH-263A",
+      "name": "263A",
+      "type": "germplasm",
+      "crop": "foxtail millet",
+      "aliases": ["ARCH-263A", "263A", "semi-dwarf line"],
+      "summary": "Semi-dwarf line used with Chuang 29 to identify genes controlling foxtail millet plant height under dense-planting and lodging concerns.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "germplasm:ARCH-Chuang29",
+      "name": "Chuang 29",
+      "type": "germplasm",
+      "crop": "foxtail millet",
+      "aliases": ["ARCH-Chuang29", "Chuang 29", "elite high-stalk breeding variety"],
+      "summary": "Elite high-stalk breeding variety used as the contrasting parent to 263A in plant-height analysis.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "germplasm:FPS2025-148",
+      "name": "Xiaojinmiaoguzi",
+      "type": "germplasm",
+      "crop": "foxtail millet",
+      "aliases": ["FPS2025-148", "Xiaojinmiaoguzi"],
+      "summary": "Top-ranked accession in a 1558-accession phenotypic evaluation, with high aggregate score and strong yield-component values in the Chifeng trial environment.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "germplasm:FPS2025-1507",
+      "name": "Bocaigen",
+      "type": "germplasm",
+      "crop": "foxtail millet",
+      "aliases": ["FPS2025-1507", "Bocaigen"],
+      "summary": "High-ranking accession with early seedling-to-spike period and high 1000-grain weight in the public phenotypic seed table.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "germplasm:ARCH-Yugu1",
+      "name": "Yugu1",
+      "type": "germplasm",
+      "crop": "foxtail millet",
+      "aliases": ["ARCH-Yugu1", "Yugu1", "Yugu No. 1"],
+      "summary": "Reference cultivar and mapping or mutant-library background used for architecture genetics and agronomic QTL resources.",
+      "source_refs": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4857278/; https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2019.00369/full",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "germplasm:ARCH-Longgu7",
+      "name": "Longgu7",
+      "type": "germplasm",
+      "crop": "foxtail millet",
+      "aliases": ["ARCH-Longgu7", "Longgu7"],
+      "summary": "Mapping parent used with Yugu1 for high-density SSR map construction and QTL detection for agronomic and yield traits.",
+      "source_refs": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4857278/",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "gene_qtl:Seita.5G404900",
+      "name": "Seita.5G404900",
+      "type": "gene_qtl",
+      "aliases": ["GA20 oxidase", "GA20ox", "plant height gene"],
+      "summary": "GA20 oxidase locus where a frameshift deletion was reported to co-segregate with dwarf phenotype in two foxtail millet F2 populations.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "marker:Seita.5G404900_CAPS",
+      "name": "Seita.5G404900 CAPS marker",
+      "type": "marker",
+      "aliases": ["CAPS marker", "Seita.5G404900 CAPS"],
+      "summary": "CAPS marker reported for the Seita.5G404900 plant-height locus.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "evidence:Chifeng_2023_2024_panel",
+      "name": "Chifeng 2023-2024 phenotypic panel",
+      "type": "evidence",
+      "aliases": ["1558-accession phenotypic evaluation", "Chifeng trial"],
+      "summary": "Two-year phenotyping in Chifeng for 1558 foxtail millet accessions, used as public seed rows for accession-level clues.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "environment:Chifeng_Inner_Mongolia",
+      "name": "Chifeng Inner Mongolia trial environment",
+      "type": "environment",
+      "aliases": ["Chifeng", "Inner Mongolia", "赤峰"],
+      "summary": "Trial environment represented in the public phenotypic seed table; should not be treated as multi-location validation.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "phenotype_protocol:dense_lodging_trial",
+      "name": "dense-planting lodging validation trial",
+      "type": "phenotype_protocol",
+      "aliases": ["lodging trial", "dense planting trial", "stem strength phenotyping"],
+      "summary": "Validation plan measuring plant height, basal internode traits, stem strength, lodging rate, panicle traits, yield components, and quality under dense planting.",
+      "source_refs": "local project design; https://www.plantnutrifert.org/en/article/Y2024/I4/641",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "breeding_strategy:MAS_architecture_introgression",
+      "name": "marker-assisted architecture introgression",
+      "type": "breeding_strategy",
+      "aliases": ["MAS", "introgression", "marker-assisted selection"],
+      "summary": "Use marker-assisted selection and field phenotyping to introgress or validate compact plant-architecture alleles while monitoring yield penalty.",
+      "source_refs": "local project design; https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "risk:dwarfing_yield_penalty",
+      "name": "dwarfing yield penalty risk",
+      "type": "risk",
+      "aliases": ["yield penalty", "background effect", "adaptation risk"],
+      "summary": "Semi-dwarf or compact architecture can reduce lodging but may create yield, biomass, or background-dependent penalties without validation.",
+      "source_refs": "local project caution; https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "risk:single_environment_evidence",
+      "name": "single-environment evidence risk",
+      "type": "risk",
+      "aliases": ["GxE risk", "multi-location gap", "single trial"],
+      "summary": "Single-environment or single-population evidence should be treated as a clue requiring multi-environment validation.",
+      "source_refs": "local project caution",
+      "data_confidence": "medium"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:foxtail_millet_has_trait_architecture",
+      "subject": "crop:foxtail_millet",
+      "predicate": "has_breeding_trait",
+      "object": "trait:dense_planting_architecture",
+      "evidence": "Dense-planting architecture is a central breeding target in the local foxtail millet project.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:architecture_connected_to_lodging",
+      "subject": "trait:dense_planting_architecture",
+      "predicate": "affects",
+      "object": "trait:lodging_resistance",
+      "evidence": "Plant height and stem architecture are tied to lodging risk under dense planting.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003; https://www.plantnutrifert.org/en/article/Y2024/I4/641",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:263A_has_architecture_trait",
+      "subject": "germplasm:ARCH-263A",
+      "predicate": "has_trait_clue",
+      "object": "trait:dense_planting_architecture",
+      "evidence": "263A is a semi-dwarf line used for plant-height gene discovery in a dense-planting/lodging problem frame.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:263A_carries_Seita5G404900",
+      "subject": "germplasm:ARCH-263A",
+      "predicate": "carries_gene_or_qtl_clue",
+      "object": "gene_qtl:Seita.5G404900",
+      "evidence": "A Seita.5G404900 frameshift deletion co-segregated with dwarf phenotype in two F2 populations involving 263A.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Seita5G404900_has_CAPS",
+      "subject": "gene_qtl:Seita.5G404900",
+      "predicate": "has_marker",
+      "object": "marker:Seita.5G404900_CAPS",
+      "evidence": "A CAPS marker was reported for Seita.5G404900.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:CAPS_supports_MAS",
+      "subject": "marker:Seita.5G404900_CAPS",
+      "predicate": "can_support",
+      "object": "breeding_strategy:MAS_architecture_introgression",
+      "evidence": "Marker-assisted validation can test the plant-height allele before breeding use.",
+      "source_refs": "local project design; https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:MAS_requires_trial",
+      "subject": "breeding_strategy:MAS_architecture_introgression",
+      "predicate": "requires",
+      "object": "phenotype_protocol:dense_lodging_trial",
+      "evidence": "Marker-positive materials still require plant height, lodging, yield, and quality phenotyping under dense planting.",
+      "source_refs": "local project design",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:263A_has_yield_penalty_risk",
+      "subject": "germplasm:ARCH-263A",
+      "predicate": "has_risk",
+      "object": "risk:dwarfing_yield_penalty",
+      "evidence": "The semi-dwarf allele or genetic background needs checks for yield penalty and adaptation before parent use.",
+      "source_refs": "local project caution; https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Chuang29_contrasts_263A",
+      "subject": "germplasm:ARCH-Chuang29",
+      "predicate": "contrasts_with",
+      "object": "germplasm:ARCH-263A",
+      "evidence": "Chuang 29 is the high-stalk contrasting parent used with 263A in plant-height analysis.",
+      "source_refs": "https://doi.org/10.1016/j.cj.2022.09.003",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Xiaojinmiaoguzi_has_yield_components",
+      "subject": "germplasm:FPS2025-148",
+      "predicate": "has_trait_clue",
+      "object": "trait:yield_components",
+      "evidence": "Xiaojinmiaoguzi ranked first in the public seed phenotypic panel with strong aggregate and yield-component values.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Bocaigen_has_early_maturity",
+      "subject": "germplasm:FPS2025-1507",
+      "predicate": "has_trait_clue",
+      "object": "trait:early_maturity",
+      "evidence": "Bocaigen had an early seedling-to-spike period in the public seed phenotypic panel.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Chifeng_panel_supports_Xiaojinmiaoguzi",
+      "subject": "evidence:Chifeng_2023_2024_panel",
+      "predicate": "supports",
+      "object": "germplasm:FPS2025-148",
+      "evidence": "The Chifeng two-year panel is the source context for Xiaojinmiaoguzi's public seed row.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Chifeng_panel_supports_Bocaigen",
+      "subject": "evidence:Chifeng_2023_2024_panel",
+      "predicate": "supports",
+      "object": "germplasm:FPS2025-1507",
+      "evidence": "The Chifeng two-year panel is the source context for Bocaigen's public seed row.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Chifeng_panel_has_environment",
+      "subject": "evidence:Chifeng_2023_2024_panel",
+      "predicate": "measured_in",
+      "object": "environment:Chifeng_Inner_Mongolia",
+      "evidence": "The public phenotypic seed rows are tied to the Chifeng Inner Mongolia trial environment.",
+      "source_refs": "https://doi.org/10.3389/fpls.2025.1624252",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Chifeng_panel_has_single_environment_risk",
+      "subject": "evidence:Chifeng_2023_2024_panel",
+      "predicate": "has_risk",
+      "object": "risk:single_environment_evidence",
+      "evidence": "The panel evidence should be followed by multi-location validation before breeding recommendations.",
+      "source_refs": "local project caution",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Yugu1_cross_Longgu7",
+      "subject": "germplasm:ARCH-Yugu1",
+      "predicate": "mapping_cross_with",
+      "object": "germplasm:ARCH-Longgu7",
+      "evidence": "Yugu1 and Longgu7 were used to build a high-density SSR map and identify agronomic and yield QTL.",
+      "source_refs": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4857278/",
+      "data_confidence": "medium"
+    },
+    {
+      "id": "edge:Longgu7_has_yield_qtl_clue",
+      "subject": "germplasm:ARCH-Longgu7",
+      "predicate": "has_trait_clue",
+      "object": "trait:yield_components",
+      "evidence": "Favorable peduncle-length QTL alleles were reported to originate from Longgu7 in the Yugu1 x Longgu7 mapping study.",
+      "source_refs": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4857278/",
+      "data_confidence": "medium"
+    }
+  ]
+}

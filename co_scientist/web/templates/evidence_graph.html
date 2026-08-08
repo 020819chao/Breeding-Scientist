@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block body_class %}evidence-graph-body{% endblock %}
+{% block title %}{{ graph.title }} - AI Breeding Scientist{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ul>
+        <li><a href="/">会话</a></li>
+        <li><a href="/sessions/{{ session.id }}">返回育种会话</a></li>
+        {% if h %}
+        <li><a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}">返回路线详情</a></li>
+        <li>路线证据图谱</li>
+        {% else %}
+        <li>总证据图谱</li>
+        {% endif %}
+    </ul>
+</nav>
+
+<hgroup>
+    <h1>{% if h %}路线证据图谱{% else %}证据关系工作台{% endif %}</h1>
+    <p>
+        {% if graph.available %}
+        查看当前育种路线背后的材料、性状、基因和验证证据。
+        {% endif %}
+    </p>
+</hgroup>
+
+{% if not graph.available %}
+<article>
+    <p><em>No {{ graph.title }} artifact is available yet.</em></p>
+    <p><code>{{ graph.path }}</code></p>
+</article>
+{% else %}
+{% if graph.closed_loop and graph.closed_loop.available %}
+<details class="evidence-detail-block">
+    <summary>查看路线背景与迭代信息</summary>
+    <section>
+    <h2>路线背景与迭代信息</h2>
+    <div class="graph-summary">
+        <article>
+            <header><strong>当前建议</strong></header>
+            <p>{{ graph.closed_loop.action }}</p>
+        </article>
+        <article>
+            <header><strong>关联父路线</strong></header>
+            <p>{{ graph.closed_loop.parents|length }}</p>
+        </article>
+        <article>
+            <header><strong>后续路线</strong></header>
+            <p>{{ graph.closed_loop.children|length }}</p>
+        </article>
+    </div>
+    {% if graph.closed_loop.direction %}
+    <p><strong>迭代方向：</strong>{{ graph.closed_loop.direction }}</p>
+    {% endif %}
+    {% if graph.closed_loop.children %}
+    <h3>后续路线</h3>
+    <ul>
+        {% for child in graph.closed_loop.children %}
+        <li><a href="{{ child.href }}">{{ child.title }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</section>
+</details>
+{% endif %}
+
+{% if graph.evidence_package_summaries %}
+<details class="evidence-detail-block">
+    <summary>查看证据资料</summary>
+<section>
+    <h2>证据资料</h2>
+    {% for package in graph.evidence_package_summaries %}
+    <article class="evidence-package-card">
+        <header>
+            <strong>证据来源</strong>
+        </header>
+
+        {% if package.germplasm %}
+        <h3>候选种质</h3>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>材料</th>
+                        <th>关注性状</th>
+                        <th>可获得性</th>
+                        <th>风险提示</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in package.germplasm %}
+                <tr>
+                        <td>{{ row.name or row.accession_id }}</td>
+                        <td>{{ row.traits }}</td>
+                        <td>{{ row.availability }}</td>
+                        <td>{{ row.risk }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if package.rag %}
+        <h3>资料证据</h3>
+        <ul>
+            {% for row in package.rag %}
+            <li>
+                <strong>{{ row.title }}</strong>
+                {% if row.url %}<br><a href="{{ row.url }}" target="_blank" rel="noreferrer">查看来源</a>{% endif %}
+                {% if row.excerpt %}<br>{{ row.excerpt }}{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if package.marker_qtl %}
+        <h3>标记与基因证据</h3>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>标记</th>
+                        <th>性状</th>
+                        <th>基因 / QTL</th>
+                        <th>验证状态</th>
+                        <th>风险提示</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in package.marker_qtl %}
+                <tr>
+                        <td>{{ row.marker_name }}</td>
+                        <td>{{ row.trait }}</td>
+                        <td>{{ row.gene_or_qtl }}</td>
+                        <td>{{ row.validation_status }}</td>
+                        <td>{{ row.risk }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if package.phenotype_protocols %}
+        <h3>表型验证方案</h3>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>性状</th>
+                        <th>环境</th>
+                        <th>方法</th>
+                        <th>判定标准</th>
+                        <th>验证状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in package.phenotype_protocols %}
+                <tr>
+                        <td>{{ row.trait }}</td>
+                        <td>{{ row.target_environment }}</td>
+                        <td>{{ row.method }}</td>
+                        <td>{{ row.thresholds }}</td>
+                        <td>{{ row.validation_status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if package.field_trials %}
+        <h3>田间试验记录</h3>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>性状</th>
+                        <th>环境</th>
+                        <th>材料</th>
+                        <th>结果</th>
+                        <th>表型摘要</th>
+                        <th>风险提示</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in package.field_trials %}
+                <tr>
+                        <td>{{ row.trait }}</td>
+                        <td>{{ row.environment }}</td>
+                        <td>{{ row.materials }}</td>
+                        <td>{{ row.outcome }}</td>
+                        <td>{{ row.phenotype_summary }}</td>
+                        <td>{{ row.risk }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if package.gaps %}
+        <h3>证据缺口与下一步</h3>
+        <ul>
+            {% for gap in package.gaps %}
+            <li>
+                <strong>{{ gap.target or "待补充证据" }}</strong>
+                {% if gap.severity %}（{{ gap.severity }}）{% endif %}
+                {% if gap.message %}<br>{{ gap.message }}{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </article>
+    {% endfor %}
+</section>
+</details>
+{% endif %}
+
+{% if graph.truncated %}
+<p class="graph-truncation-note">当前绘制的是覆盖关键类型的证据子图：{{ graph.visible_node_count }} / {{ graph.node_count }} 个节点、{{ graph.visible_edge_count }} / {{ graph.edge_count }} 条关系；完整知识库仍保留在后台，可通过搜索和筛选继续查看。</p>
+{% endif %}
+
+<section class="graph-workspace-section" aria-label="交互式证据图谱">
+    <div class="graph-workspace-heading">
+        <div>
+            <span class="graph-eyebrow">BREEDING EVIDENCE GRAPH</span>
+            <h2>育种证据图谱</h2>
+            <p>以当前育种路线为中心，查看材料、性状、基因和验证证据之间的关系。</p>
+        </div>
+        <div class="graph-count-summary" aria-label="图谱规模">
+            <strong>{{ graph.visible_node_count }}</strong><span>当前节点 / {{ graph.node_count }}</span>
+            <strong>{{ graph.visible_edge_count }}</strong><span>当前关系 / {{ graph.edge_count }}</span>
+        </div>
+    </div>
+    <div class="graph-browser">
+        <div class="graph-toolbar" role="toolbar" aria-label="证据图谱筛选和操作">
+            <label class="graph-search-field">
+                <span>搜索节点</span>
+                <input type="search" data-cy-search placeholder="输入材料、性状、基因或证据名称">
+            </label>
+            <div class="graph-filter-group" role="group" aria-label="按类型筛选">
+                <button type="button" class="graph-filter-button is-active" data-cy-filter="all">全部</button>
+                <button type="button" class="graph-filter-button" data-cy-filter="germplasm">种质</button>
+                <button type="button" class="graph-filter-button" data-cy-filter="trait">性状</button>
+                <button type="button" class="graph-filter-button" data-cy-filter="gene_qtl_marker">基因 / 标记</button>
+                <button type="button" class="graph-filter-button" data-cy-filter="environment_protocol">环境 / 方案</button>
+                <button type="button" class="graph-filter-button" data-cy-filter="rag_evidence">资料</button>
+                <button type="button" class="graph-filter-button" data-cy-filter="risk">风险</button>
+            </div>
+            <div class="graph-action-group">
+                <button type="button" class="graph-action-button" data-cy-action="fit">聚焦图谱</button>
+                <button type="button" class="graph-action-button" data-cy-action="layout">重新布局</button>
+                <button type="button" class="graph-action-button" data-cy-action="clear">清除选择</button>
+            </div>
+        </div>
+        <div class="graph-feedback" data-cy-feedback role="status" aria-live="polite" hidden></div>
+        <div class="graph-legend" aria-label="节点类型图例">
+            <span><i class="legend-dot legend-germplasm"></i>种质</span>
+            <span><i class="legend-dot legend-trait"></i>性状</span>
+            <span><i class="legend-dot legend-gene"></i>基因 / 标记</span>
+            <span><i class="legend-dot legend-environment"></i>环境 / 方案</span>
+            <span><i class="legend-dot legend-evidence"></i>资料证据</span>
+            <span><i class="legend-dot legend-risk"></i>风险</span>
+        </div>
+        <div class="graph-browser-grid">
+            <div class="graph-canvas-shell">
+                <div
+                    class="cytoscape-graph"
+                    data-cytoscape-graph
+                    data-elements-id="cy-elements-{{ graph.scope }}-{{ graph.hypothesis_id or session.id }}"
+                    role="img"
+                    aria-label="{{ graph.title }}"
+                ></div>
+                <div class="graph-canvas-hint">点击节点查看证据 · 滚轮缩放 · 拖动调整视图</div>
+            </div>
+            <aside class="graph-detail-panel" data-cy-details>
+                <div class="graph-detail-panel-heading">
+                    <span>节点详情</span>
+                    <button type="button" class="graph-detail-close" data-cy-action="clear" aria-label="清除选择">×</button>
+                </div>
+                <div data-cy-detail-content>
+                    <div class="graph-detail-empty">
+                        <span class="graph-detail-empty-icon">＋</span>
+                        <strong>选择一个节点</strong>
+                        <p>点击图谱中的节点或关系，查看它对当前育种路线的意义。</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        <script type="application/json" id="cy-elements-{{ graph.scope }}-{{ graph.hypothesis_id or session.id }}">
+            {{ graph.cy_elements | tojson }}
+        </script>
+        <p class="muted graph-library-note">
+            当前展示的是与本次育种路线相关的证据子图，完整知识库仍保留在后台。
+        </p>
+    </div>
+</section>
+
+<details>
+<summary>备用图形视图（高级）</summary>
+<section class="evidence-graph-panel">
+    <svg class="evidence-graph-svg" viewBox="0 0 1120 {{ graph.svg_height }}" role="img" aria-label="{{ graph.title }}">
+        {% for edge in graph.edges %}
+            {% set source = (graph.nodes | selectattr("id", "equalto", edge.source) | list | first) %}
+            {% set target = (graph.nodes | selectattr("id", "equalto", edge.target) | list | first) %}
+            {% if source and target %}
+            <line
+                class="graph-edge"
+                x1="{{ source.x }}"
+                y1="{{ source.y }}"
+                x2="{{ target.x }}"
+                y2="{{ target.y }}"
+            />
+            <text
+                class="graph-edge-label"
+                x="{{ (source.x + target.x) / 2 }}"
+                y="{{ (source.y + target.y) / 2 - 6 }}"
+            >{{ edge.predicate }}</text>
+            {% endif %}
+        {% endfor %}
+        {% for node in graph.nodes %}
+        <g class="graph-node graph-node-{{ node.type }}">
+            <circle cx="{{ node.x }}" cy="{{ node.y }}" r="22"></circle>
+            <text x="{{ node.x }}" y="{{ node.y + 40 }}" text-anchor="middle">{{ node.label }}</text>
+            <title>{{ node.full_label }} | {{ node.type }} | {{ node.status }}</title>
+        </g>
+        {% endfor %}
+    </svg>
+</section>
+</details>
+
+<details class="graph-data-details">
+<summary>查看全部节点和关系明细</summary>
+<section>
+    <h2>节点明细</h2>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>ID</th>
+                    <th>Label</th>
+                    <th>Status</th>
+                    <th>Evidence level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for node in graph.nodes %}
+                <tr>
+                    <td><code>{{ node.type }}</code></td>
+                    <td><code>{{ node.id }}</code></td>
+                    <td>{{ node.full_label }}</td>
+                    <td>{{ node.status }}</td>
+                    <td>{{ node.evidence_level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section>
+    <h2>关系明细</h2>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Predicate</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Provenance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for edge in graph.edges %}
+                <tr>
+                    <td><code>{{ edge.source }}</code></td>
+                    <td><code>{{ edge.predicate }}</code></td>
+                    <td><code>{{ edge.target }}</code></td>
+                    <td>{{ edge.status }}</td>
+                    <td>{{ edge.provenance }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+</details>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+<script src="/static/evidence_graph.js?v=20260807-graph-layout-2"></script>
+{% endblock %}

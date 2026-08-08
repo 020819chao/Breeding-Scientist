@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}育种路线工作台{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ul>
+        <li><a href="/">育种会话</a></li>
+        <li><a href="/sessions/{{ session.id }}">返回当前会话</a></li>
+        <li>育种路线</li>
+    </ul>
+</nav>
+
+<div class="route-detail-toolbar">
+    {% if has_chinese_hypothesis or has_english_hypothesis %}
+    <div class="route-language-switcher" aria-label="语言切换">
+        <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}?lang=zh" role="button" {% if language == "zh" %}aria-current="page"{% endif %}>中文</a>
+        <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}?lang=en" role="button" class="secondary" {% if language == "en" %}aria-current="page"{% endif %}>English</a>
+    </div>
+    {% endif %}
+    <div class="route-view-actions">
+        {% if evidence_subgraph.available %}
+        <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}/evidence-subgraph">查看证据图谱</a>
+        {% endif %}
+        {% if route_revision_graph.available %}
+        <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}/route-revision-graph">查看路线演化</a>
+        {% endif %}
+    </div>
+</div>
+
+<header class="route-detail-heading">
+    <p class="route-kicker">育种路线工作台</p>
+    <h1>{{ route_view.title or display_title }}</h1>
+    <p class="route-statement">{{ route_view.statement or h.summary or "这条路线已形成初步设计，等待进一步验证。" }}</p>
+    <div class="route-status-row">
+        <span class="route-status route-status-{{ hypothesis_lifecycle_class(h.state) }}">{{ h.state }}</span>
+        {% if h.strategy %}<span class="route-meta">{{ hypothesis_strategy_label(h.strategy) }}</span>{% endif %}
+    </div>
+</header>
+
+{% if route_view.available %}
+<section class="route-value-panel">
+    <p class="route-kicker">路线价值</p>
+    <h2>为什么值得推进</h2>
+    <p>{{ route_view.mechanism or "这条路线与当前育种目标相关，建议结合下面的材料和验证计划推进。" }}</p>
+</section>
+
+<section class="route-overview">
+    <header>
+        <p class="route-kicker">证据概况</p>
+        <h2>这条路线的依据</h2>
+    </header>
+    <div class="route-evidence-strip">
+        <div><strong>{{ route_view.evidence_counts.get("germplasm", 0) }}</strong><span>材料依据</span></div>
+        <div><strong>{{ route_view.evidence_counts.get("kg", 0) }}</strong><span>关联依据</span></div>
+        <div><strong>{{ route_view.evidence_counts.get("rag", 0) }}</strong><span>本地资料</span></div>
+        <div><strong>{{ route_view.citation_count }}</strong><span>来源记录</span></div>
+        {% if route_view.audit.completeness_score is not none %}
+        <div><strong>{{ "%.0f"|format(route_view.audit.completeness_score) }}%</strong><span>方案完整度</span></div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="route-plan-section">
+    <header>
+        <p class="route-kicker">可执行方案</p>
+        <h2>材料、选择与验证</h2>
+    </header>
+    <div class="route-section-grid">
+        {% for section in route_view.sections %}
+        <article class="route-section-card">
+            <h3>{{ section.title }}</h3>
+            <dl>
+            {% for item in section["items"] %}
+                <div>
+                    <dt>{{ item.label }}</dt>
+                    <dd>{{ item.value }}</dd>
+                </div>
+            {% endfor %}
+            </dl>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% set readiness = route_view.validation_summary.get("readiness_level", "") %}
+{% set risk_level = route_view.risk_summary.get("risk_level", "") %}
+{% if route_view.evidence_gap_types or route_view.validation_summary or route_view.risk_summary %}
+<section class="route-review-strip">
+    <header>
+        <p class="route-kicker">推进前检查</p>
+        <h2>当前还需要确认什么</h2>
+    </header>
+    {% if route_view.evidence_gap_types %}
+    <p><strong>需要补充的证据：</strong>{% for gap in route_view.evidence_gap_types %}<span class="route-gap">{{ localize_gap_text(gap) }}</span>{% endfor %}</p>
+    {% endif %}
+    {% if route_view.validation_summary %}
+    <p><strong>验证准备度：</strong>
+        {% if readiness in ["ready", "high"] %}可以进入验证
+        {% elif readiness in ["partial", "medium"] %}部分准备完成
+        {% elif readiness in ["not_ready", "low"] %}还需要补充验证
+        {% else %}已形成验证计划{% endif %}
+        {% if route_view.validation_summary.get("critical_gap_count") is not none %}，关键缺口 {{ route_view.validation_summary.get("critical_gap_count") }} 项{% endif %}
+    </p>
+    {% endif %}
+    {% if route_view.risk_summary %}
+    <p><strong>风险状态：</strong>
+        {% if risk_level in ["controlled", "low"] %}风险可控
+        {% elif risk_level in ["moderate", "medium"] %}存在中等风险
+        {% elif risk_level in ["high", "critical"] %}需要优先处理风险
+        {% else %}已完成风险检查{% endif %}
+        {% if route_view.risk_summary.get("must_resolve_count") is not none %}，必须先解决 {{ route_view.risk_summary.get("must_resolve_count") }} 项{% endif %}
+    </p>
+    {% endif %}
+</section>
+{% endif %}
+{% endif %}
+
+{% if closed_loop.available %}
+<section class="closed-loop-panel">
+    <p class="route-kicker">路线迭代</p>
+    <h2>这条路线如何进入下一轮</h2>
+    <div class="graph-summary">
+        <article><header><strong>来源路线</strong></header><p>{{ closed_loop.parents|length }} 条</p></article>
+        <article><header><strong>当前动作</strong></header><p>{{ closed_loop.action }}</p></article>
+        <article><header><strong>后续路线</strong></header><p>{{ closed_loop.children|length }} 条</p></article>
+    </div>
+    {% if closed_loop.parents %}
+    <h3>来源路线</h3>
+    <ul>
+        {% for parent in closed_loop.parents %}
+        <li><a href="{{ parent.href }}">{{ parent.title }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if closed_loop.direction %}<p><strong>迭代方向：</strong>{{ closed_loop.direction }}</p>{% endif %}
+    {% if closed_loop.children %}
+    <h3>后续路线</h3>
+    <ul>
+        {% for child in closed_loop.children %}
+        <li><a href="{{ child.href }}">{{ child.title }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if review_views %}
+<section class="route-expert-review">
+    <p class="route-kicker">专家意见</p>
+    <h2>专家评审结论</h2>
+    {% for review in review_views %}
+    <article class="breeding-review-card">
+        <header>
+            <strong>{{ review.kind_label }}</strong>
+            <span class="decision-badge decision-revise">{{ review.verdict_label }}</span>
+        </header>
+        <details>
+            <summary>查看评审意见</summary>
+            <div class="review-body">{{ review.body_html | safe }}</div>
+        </details>
+    </article>
+    {% endfor %}
+</section>
+{% endif %}
+
+<p><a href="/sessions/{{ session.id }}">返回当前会话</a></p>
+{% endblock %}

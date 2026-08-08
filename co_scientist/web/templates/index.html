@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Sessions - AI Breeding Scientist{% endblock %}
+{% block content %}
+<hgroup>
+    <h1>Breeding sessions</h1>
+    <p>Six-agent breeding workflow: goal interpretation, evidence graph curation, hypothesis design, validation planning, risk review, and iterative closure.</p>
+</hgroup>
+
+{% if not sessions %}
+<article>
+    <p>No sessions yet.</p>
+    <a href="/sessions/new" role="button">Start your first breeding session -&gt;</a>
+</article>
+{% else %}
+<table>
+    <thead>
+    <tr>
+        <th>ID</th><th>Status</th><th>Goal</th>
+        <th style="text-align:right">Hypotheses</th>
+        <th style="text-align:right">Spent</th><th>Updated</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for s in sessions %}
+    <tr>
+        <td><a href="/sessions/{{ s.id }}"><code>{{ s.id[-12:] }}</code></a></td>
+        <td>
+            <span class="status status-{{ s.status }}">{{ s.status }}</span>
+        </td>
+        <td style="max-width:32rem">{{ s.research_goal[:120] }}</td>
+        <td style="text-align:right">{{ s.n_hyps }}</td>
+        <td style="text-align:right">
+            ${{ "%.2f"|format(s.budget_used_usd) }} / ${{ "%.2f"|format(s.budget_usd) }}
+        </td>
+        <td><small>{{ s.updated_at[:19] }}</small></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

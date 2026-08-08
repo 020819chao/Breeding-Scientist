@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="agent-review-hero">
+    <p><a href="/sessions/{{ session.id }}">返回育种会话</a></p>
+    <div>
+        <p class="eyebrow">BREEDING SCIENTIST / REVIEW WORKSPACE</p>
+        <h1>六智能体成果审阅</h1>
+        <p class="lead">按智能体查看本次育种会话形成的结构化成果、证据链和后续建议。</p>
+    </div>
+</section>
+
+{% if request.query_params.get("saved") %}
+<p class="form-success">专家审核已保存，后续任务队列已按审核意见更新。</p>
+{% endif %}
+{% if request.query_params.get("error") %}
+<p class="form-error">{{ request.query_params.get("error") }}</p>
+{% endif %}
+
+<div id="agent-review-workspace">
+<section class="agent-review-navigation" aria-labelledby="agent-review-navigation-title">
+    <div class="section-heading-row">
+        <div>
+            <h2 id="agent-review-navigation-title">选择智能体</h2>
+            <p class="muted">选择一个智能体，在下方查看它的成果。</p>
+        </div>
+        <span class="agent-review-count">{{ lineage|length }} 个智能体</span>
+    </div>
+    <div class="agent-review-nav-grid">
+    {% for node in lineage %}
+        <a href="/sessions/{{ session.id }}/agent-outputs?agent={{ node.name|urlencode }}"
+           hx-get="/sessions/{{ session.id }}/agent-outputs?agent={{ node.name|urlencode }}"
+           hx-target="#agent-review-workspace"
+           hx-select="#agent-review-workspace"
+           hx-swap="outerHTML"
+           hx-push-url="true"
+           class="agent-review-nav-button{% if selected_agent == node.name %} active{% endif %}"
+           {% if selected_agent == node.name %}aria-current="page"{% endif %}>
+            <span class="agent-review-nav-index">0{{ loop.index }}</span>
+            <span class="agent-review-nav-copy">
+                <strong>{{ node.label or node.name }}</strong>
+                <small>{{ node.purpose }}</small>
+            </span>
+            <span class="agent-review-nav-meta">
+                <b>{{ node.output_count }}</b> 项成果
+                <span class="agent-review-view-pill">查看</span>
+            </span>
+        </a>
+    {% endfor %}
+    </div>
+</section>
+
+{% if not selected_agent %}
+<section class="agent-review-overview-note">
+    <strong>请选择一个智能体</strong>
+    <span>页面只展示你当前选择的智能体成果，避免一次看到过多信息。</span>
+</section>
+{% endif %}
+
+{% if selected_agent %}
+{% for agent in six_agent_outputs %}
+<section id="agent-output-{{ loop.index }}" class="agent-review-panel">
+    <header class="agent-review-header">
+        <div>
+            <p class="agent-review-step">智能体 0{{ loop.index }}</p>
+            <h2>{{ agent.label }}</h2>
+            <p>{{ agent.purpose }}</p>
+        </div>
+        <div class="agent-review-header-count">
+            <strong>{{ agent.output_count }}</strong>
+            <span>项成果</span>
+        </div>
+    </header>
+    <p class="agent-review-summary">{{ agent.summary }}</p>
+    {% if agent.outputs %}
+    <div class="agent-review-output-list">
+        {% for output in agent.outputs %}
+        <article class="agent-review-output">
+            <header class="agent-output-card-header">
+                <div>
+                    <p class="agent-output-kind">结构化成果</p>
+                    <h3>{{ output.title }}</h3>
+                </div>
+                <span class="output-review-status output-review-{{ output.review.status }}">{{ output.review.status_label }}</span>
+            </header>
+            <p>{{ output.summary }}</p>
+            {% if output.details %}
+            <details class="advanced-output-details">
+                <summary>查看高级信息</summary>
+                <dl class="agent-output-fields">
+                {% for detail in output.details %}
+                    <dt>{{ detail.label }}</dt>
+                    <dd>{{ detail.value }}</dd>
+                {% endfor %}
+                </dl>
+            </details>
+            {% endif %}
+            <footer>
+                {% if output.url %}<a href="{{ output.url }}">{{ output.link_label }}</a>{% endif %}
+            </footer>
+            {% if output.review.reviewer %}<p class="output-review-meta">审核人：{{ output.review.reviewer }}</p>{% endif %}
+            {% if output.review.note %}<p class="output-review-note">审核意见：{{ output.review.note }}</p>{% endif %}
+            <details class="mentor-review-form">
+                <summary>专家审核</summary>
+                <form method="post" action="/sessions/{{ session.id }}/agent-outputs/review">
+                    <input type="hidden" name="agent" value="{{ output.agent }}">
+                    <input type="hidden" name="output_key" value="{{ output.output_key }}">
+                    <input type="hidden" name="output_path" value="{{ output.path or '' }}">
+                    <input type="hidden" name="target_id" value="{{ output.target_id or '' }}">
+                    <label>审核人
+                        <input name="reviewer" required placeholder="姓名或工号">
+                    </label>
+                    <label>结论
+                        <select name="status">
+                            <option value="approved">通过</option>
+                            <option value="needs_revision">需修改</option>
+                            <option value="rejected">不通过</option>
+                        </select>
+                    </label>
+                    <label>审核意见
+                        <textarea name="note" rows="3" placeholder="填写依据、修改要求或补充验证要求"></textarea>
+                    </label>
+                    <button type="submit">保存审核</button>
+                </form>
+            </details>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">该智能体暂时没有可展示的结构化成果。</p>
+    {% endif %}
+</section>
+{% endfor %}
+{% endif %}
+</div>
+{% endblock %}

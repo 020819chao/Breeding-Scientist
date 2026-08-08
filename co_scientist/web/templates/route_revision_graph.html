@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}路线修订图 · {{ session.id[-12:] }}{% endblock %}
+{% block body_class %}route-revision-body{% endblock %}
+{% block content %}
+{% set action_labels = {
+    "keep": "保留",
+    "revise": "修订",
+    "expand": "扩展",
+    "pause": "暂缓",
+    "reject": "淘汰",
+    "pending": "待处理",
+    "evolved": "演化"
+} %}
+<nav class="route-revision-breadcrumb" aria-label="breadcrumb">
+    <a href="/">育种会话</a>
+    <span>/</span>
+    <a href="/sessions/{{ session.id }}">返回当前会话</a>
+    <span>/</span>
+    <strong>{{ '路线修订子图' if h else '路线修订图' }}</strong>
+</nav>
+
+<header class="route-revision-hero">
+    <div>
+        <p class="route-revision-kicker">BREEDING SCIENTIST / ROUTE EVOLUTION</p>
+        <h1>{{ '路线修订子图' if h else '路线修订图' }}</h1>
+        <p>查看候选路线如何根据证据缺口和评审结论逐步调整。</p>
+    </div>
+    {% if graph.available %}
+    <div class="route-revision-summary" aria-label="路线修订概览">
+        <span><strong>{{ graph.node_count }}</strong>条候选路线</span>
+        <span><strong>{{ graph.edge_count }}</strong>次路线修订</span>
+    </div>
+    {% endif %}
+</header>
+
+{% if not graph.available %}
+<section class="route-revision-empty">
+    <strong>暂时没有路线修订记录</strong>
+    <p>当系统根据新证据生成或调整候选路线后，这里会显示路线演化过程。</p>
+</section>
+{% else %}
+<section class="route-revision-panel">
+    <div class="route-revision-panel-heading">
+        <div>
+            <p class="route-revision-kicker">ROUTE EVOLUTION</p>
+            <h2>从原始路线到当前路线</h2>
+        </div>
+        <p class="route-revision-help">点击路线名称可查看对应的育种方案。</p>
+    </div>
+    <section class="route-revision-canvas-wrap">
+        <svg class="route-revision-graph-svg" viewBox="0 0 {{ graph.svg_width }} {{ graph.svg_height }}" role="img" aria-label="育种路线修订关系图">
+            <defs>
+                <marker id="arrow-route-revision" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z"></path>
+                </marker>
+            </defs>
+            {% for edge in graph.edges %}
+                {% set source = (graph.nodes | selectattr("id", "equalto", edge.source) | list | first) %}
+                {% set target = (graph.nodes | selectattr("id", "equalto", edge.target) | list | first) %}
+                {% if source and target %}
+                <line class="route-revision-edge route-revision-edge-{{ edge.action_class }}" x1="{{ source.x + 26 }}" y1="{{ source.y }}" x2="{{ target.x - 28 }}" y2="{{ target.y }}" marker-end="url(#arrow-route-revision)"></line>
+                <text class="graph-edge-label" x="{{ (source.x + target.x) / 2 }}" y="{{ (source.y + target.y) / 2 - 8 }}">{{ action_labels.get(edge.action, edge.action) }}</text>
+                {% endif %}
+            {% endfor %}
+            {% for node in graph.nodes %}
+            <a href="{{ node.href }}">
+                <g class="route-revision-node route-revision-node-{{ node.action_class }}">
+                    <circle cx="{{ node.x }}" cy="{{ node.y }}" r="26"></circle>
+                    <text x="{{ node.x }}" y="{{ node.y + 45 }}" text-anchor="middle" class="route-revision-node-action">{{ action_labels.get(node.action, node.action) }}</text>
+                    <text x="{{ node.x }}" y="{{ node.y + 63 }}" text-anchor="middle" class="route-revision-node-label">{{ node.label }}</text>
+                    <title>{{ node.full_label }} · {{ action_labels.get(node.action, node.action) }}</title>
+                </g>
+            </a>
+            {% endfor %}
+        </svg>
+    </section>
+</section>
+
+<section class="route-revision-records">
+    <header>
+        <p class="route-revision-kicker">REVISION RECORDS</p>
+        <h2>路线修订记录</h2>
+    </header>
+    {% if not graph.edges %}
+    <p class="muted">当前没有父子路线修订关系。</p>
+    {% else %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>原始路线</th>
+                    <th>修订动作</th>
+                    <th>当前路线</th>
+                    <th>修订方向</th>
+                    <th>需要补充的证据</th>
+                    <th>查看依据</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for edge in graph.edges %}
+                {% set source = (graph.nodes | selectattr("id", "equalto", edge.source) | list | first) %}
+                {% set target = (graph.nodes | selectattr("id", "equalto", edge.target) | list | first) %}
+                <tr>
+                    <td>{% if source %}<a href="{{ source.href }}">{{ source.full_label }}</a>{% else %}未命名路线{% endif %}</td>
+                    <td><span class="decision-badge decision-{{ edge.action_class }}">{{ action_labels.get(edge.action, edge.action) }}</span></td>
+                    <td>{% if target %}<a href="{{ target.href }}">{{ target.full_label }}</a>{% else %}未命名路线{% endif %}</td>
+                    <td>{{ edge.direction or '未记录具体方向' }}</td>
+                    <td>{% if edge.evidence_gap_to_resolve %}{{ edge.evidence_gap_to_resolve | join('；') }}{% else %}暂无明确缺口{% endif %}</td>
+                    <td>{% if edge.evidence_subgraph_href %}<a class="route-evidence-link" href="{{ edge.evidence_subgraph_href }}">查看父假设证据子图</a>{% else %}<span class="muted">暂无</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</section>
+
+<details class="route-revision-advanced">
+    <summary>查看完整路线节点</summary>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>路线</th><th>动作</th><th>状态</th></tr>
+            </thead>
+            <tbody>
+                {% for node in graph.nodes %}
+                <tr>
+                    <td><a href="{{ node.href }}">{{ node.full_label }}</a></td>
+                    <td>{{ action_labels.get(node.action, node.action) }}</td>
+                    <td>{{ node.state }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if graph.edges %}
+    <h3 class="route-revision-technical-heading">证据处理记录</h3>
+    <div class="table-scroll">
+        <table>
+            <thead><tr><th>路线修订</th><th>证据包</th><th>验证计划</th><th>风险评审</th></tr></thead>
+            <tbody>
+                {% for edge in graph.edges %}
+                <tr>
+                    <td>{{ action_labels.get(edge.action, edge.action) }}</td>
+                    <td><code>{{ edge.evidence_package_path or '未记录' }}</code></td>
+                    <td><code>{{ edge.validation_plan_path or '未记录' }}</code></td>
+                    <td><code>{{ edge.risk_review_path or '未记录' }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</details>
+{% endif %}
+{% endblock %}

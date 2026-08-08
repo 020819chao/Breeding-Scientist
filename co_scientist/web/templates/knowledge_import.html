@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}知识库接入中心 · AI Breeding Scientist{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><a href="/">育种会话</a> / 知识库接入中心</nav>
+
+<header class="knowledge-intake-header">
+    <p class="knowledge-kicker">KNOWLEDGE INTAKE CENTER</p>
+    <h1>知识库接入中心</h1>
+    <p class="knowledge-lead">
+        上传一批新增育种资料，系统会自动完成格式检查、去重合并和知识库更新，之后提交专家审核。
+    </p>
+</header>
+
+<section class="knowledge-status-grid" aria-label="知识库状态">
+    <article class="knowledge-status-card">
+        <div class="knowledge-status-label">当前活动知识库</div>
+        {% if catalog.available %}
+        <strong>运行正常</strong>
+        <p>最近更新：{{ catalog.updated_at }}</p>
+        <small>历史资料已保留，新会话会自动使用完整知识库</small>
+        {% else %}
+        <strong>尚未建立</strong>
+        <p>请先上传第一批知识资料。</p>
+        {% endif %}
+    </article>
+    <article class="knowledge-status-card">
+        <div class="knowledge-status-label">资料审核</div>
+        <strong>{% if monitor.pending_count %}有资料待审核{% else %}暂无待审核资料{% endif %}</strong>
+        <p>上传资料会先自动检查，通过审核后才会进入知识库。</p>
+    </article>
+</section>
+
+<section class="knowledge-intake-layout">
+    <article class="knowledge-upload-panel">
+        <div class="knowledge-section-heading">
+            <span class="knowledge-step">01</span>
+            <div>
+                <p class="knowledge-kicker">UPLOAD A BATCH</p>
+                <h2>上传知识批次 ZIP</h2>
+            </div>
+        </div>
+        <p class="knowledge-section-lead">建议先下载标准模板，再把新增数据放入对应位置。一次上传可以包含一个或多个杂粮作物，也可以只接入一种资料。</p>
+        <form method="post" action="/knowledge/upload" enctype="multipart/form-data" class="knowledge-upload-form">
+            <label class="knowledge-file-field">
+                <span>选择知识批次文件</span>
+                <input type="file" name="batch_file" accept=".zip,application/zip" required>
+                <small>仅支持 `.zip`，至少包含一类有效资料；没有的资料类别可以不放。</small>
+            </label>
+            <label class="knowledge-review-toggle">
+                {% if direct_activation_allowed %}
+                <input type="checkbox" name="dry_run" value="true">
+                <span>仅预检，不直接激活</span>
+                {% else %}
+                <input type="checkbox" checked disabled>
+                <input type="hidden" name="dry_run" value="true">
+                <span>上传后先进入专家审核，审核通过才会激活</span>
+                {% endif %}
+            </label>
+            <div class="knowledge-upload-actions">
+                <button type="submit">上传并自动预检 <span>→</span></button>
+                <a href="/knowledge/template" role="button" class="secondary outline">下载标准 ZIP 模板</a>
+                <a href="/knowledge/demo" role="button" class="secondary outline">下载谷子示例批次</a>
+            </div>
+        </form>
+        <p class="knowledge-demo-note"><strong>第一次使用？</strong>先下载谷子示例批次，上传后可以完整体验预检、审核和激活流程。示例数据仅用于演示。</p>
+        <p class="knowledge-safety-note"><strong>不会覆盖现有知识：</strong>预检失败或审核未通过时，当前活动知识库保持不变。</p>
+    </article>
+
+    <aside class="knowledge-package-guide">
+        <p class="knowledge-kicker">PACKAGE CONTENTS</p>
+        <h2>ZIP 里放什么？</h2>
+        <p>这些资料共同构成系统的育种知识基础。每个批次按需上传，系统会自动与现有知识合并。</p>
+        <ul class="knowledge-source-list">
+            <li><span class="source-format csv">CSV</span><div><strong>种质资源</strong><small>材料、ID、性状、可获得性、来源</small></div></li>
+            <li><span class="source-format json">JSON</span><div><strong>作物知识图谱</strong><small>材料、性状、基因/QTL、标记、环境和关系</small></div></li>
+            <li><span class="source-format text">MD/TXT</span><div><strong>证据资料</strong><small>文献摘要、实验记录、材料确认、专家意见</small></div></li>
+            <li><span class="source-format csv">CSV</span><div><strong>标记 / QTL</strong><small>检测方法、验证状态、关联材料和风险</small></div></li>
+            <li><span class="source-format csv">CSV</span><div><strong>表型协议</strong><small>测定方法、环境、重复设计和推进阈值</small></div></li>
+            <li><span class="source-format csv">CSV</span><div><strong>田间试验</strong><small>环境、材料、表型、基因型和试验结论</small></div></li>
+        </ul>
+        <details class="knowledge-format-details">
+            <summary>格式和填写规则</summary>
+            <p>请优先使用下载的标准模板；文献和实验资料请整理为 `.md` 或 `.txt` 文件，PDF 请先整理成证据资料。</p>
+            <p>暂时没有某类数据时，不需要创建对应文件或 manifest 条目；系统会把该类别视为空增量，并保留旧知识。</p>
+            <p>整个 ZIP 如果没有任何有效记录会被拒绝，避免空批次误触发审核和版本更新。</p>
+        </details>
+    </aside>
+</section>
+
+<section class="knowledge-flow-section">
+    <div class="knowledge-section-heading compact">
+        <span class="knowledge-step">02</span>
+        <div><p class="knowledge-kicker">AUTOMATED WORKFLOW</p><h2>上传之后会发生什么？</h2></div>
+    </div>
+    <div class="knowledge-flow">
+        <div><span>1</span><strong>安全解压</strong><small>隔离处理，不直接碰活动库</small></div>
+        <div><span>2</span><strong>自动预检</strong><small>检查文件格式和资料内容</small></div>
+        <div><span>3</span><strong>去重合并</strong><small>按稳定 ID 保留新旧知识</small></div>
+        <div><span>4</span><strong>专家审核</strong><small>通过后加入知识库</small></div>
+    </div>
+</section>
+
+{% if result %}
+<section class="knowledge-result-section">
+    <div class="knowledge-section-heading compact">
+        <span class="knowledge-step">03</span>
+        <div><p class="knowledge-kicker">PREFLIGHT RESULT</p><h2>本次批次处理结果</h2></div>
+    </div>
+    <article class="knowledge-result-panel {{ 'success' if result.ok else 'failure' }}">
+        {% if result.ok %}
+        {% set stats = result.stats or {} %}
+        {% set added = stats.get('added', {}) %}
+        <header>
+            <div>
+                <strong>{{ '预检通过，待专家审核' if result.dry_run else '批次已激活' }}</strong>
+                <p>本次新增资料已完成安全检查</p>
+            </div>
+            <span class="knowledge-result-badge">{{ '待审核' if result.dry_run else '已激活' }}</span>
+        </header>
+        <div class="knowledge-result-stats">
+            <div><strong>{{ added.get('germplasm_resources', 0) }}</strong><span>新增种质资料</span></div>
+            <div><strong>{{ added.get('marker_qtl', 0) }}</strong><span>新增标记资料</span></div>
+            <div><strong>{{ added.get('phenotype_protocol', 0) }}</strong><span>新增表型资料</span></div>
+            <div><strong>{{ added.get('field_trial', 0) }}</strong><span>新增试验资料</span></div>
+            <div><strong>{{ stats.get('rag_documents_added', 0) }}</strong><span>新增证据资料</span></div>
+        </div>
+        {% if result.dry_run %}
+        <a href="/knowledge/batches/{{ result.batch_id }}" role="button">进入专家审核 →</a>
+        {% endif %}
+        {% else %}
+        <strong>导入未完成</strong>
+        <p>{{ result.error }}</p>
+        <small>当前知识库没有被替换，请根据错误提示修改 ZIP 后重新上传。</small>
+        {% endif %}
+    </article>
+</section>
+{% endif %}
+
+{% if history %}
+<section class="knowledge-history-section">
+    <div class="knowledge-section-heading compact">
+        <span class="knowledge-step">04</span>
+        <div><p class="knowledge-kicker">BATCH HISTORY</p><h2>知识批次历史</h2></div>
+    </div>
+    <div class="table-scroll">
+    <table class="knowledge-history-table">
+        <thead>
+            <tr><th>作物范围</th><th>更新时间</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+        {% for row in history %}
+            <tr>
+                <td>{{ row.crop_scope | join('、') }}</td>
+                <td>{{ row.imported_at }}</td>
+                <td>
+                    {% if row.is_pending %}<mark>预检通过，待审核</mark>
+                    {% elif row.is_active and row.approval_status == 'approved' %}<mark>已审核激活</mark>
+                    {% elif row.is_active %}<mark>当前活动</mark>
+                    {% else %}历史版本{% endif %}
+                </td>
+                <td><a href="/knowledge/batches/{{ row.batch_id }}">查看处理结果 →</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

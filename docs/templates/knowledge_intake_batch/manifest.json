@@ -1,0 +1,24 @@
+{
+  "batch_id": "replace-with-batch-id",
+  "schema_version": "1.0",
+  "crop_scope": [
+    "replace-with-crop-key"
+  ],
+  "submitted_by": "",
+  "submitted_at": "YYYY-MM-DD",
+  "notes": "Copy this directory, fill the six source paths, and run scripts/validate_knowledge_batch.py.",
+  "sources": {
+    "germplasm_csv": "sources/germplasm_resources.csv",
+    "crop_kg_packs": [
+      {
+        "crop_key": "replace-with-crop-key",
+        "path": "sources/kg/crop_kg.json"
+      }
+    ],
+    "rag_sources_dir": "sources/rag",
+    "rag_index_json": "outputs/evidence_index.json",
+    "marker_qtl_csv": "sources/marker_qtl_library.csv",
+    "phenotype_protocol_csv": "sources/phenotype_protocol_library.csv",
+    "field_trial_csv": "sources/field_trial_records.csv"
+  }
+}

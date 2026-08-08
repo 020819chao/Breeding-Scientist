@@ -1,0 +1,3 @@
+-- Migration 0007 is implemented in co_scientist.storage.db because it must
+-- inspect existing SQLite tables and only rename columns/tables that are still
+-- using the pre-breeding-scientist physical names.

@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+{% block body_class %}session-detail-body{% endblock %}
+{% block title %}育种会话 {{ session.id[-12:] }} — AI Breeding Scientist{% endblock %}
+{% block content %}
+{% set status_labels = {
+    "running": "运行中",
+    "in_progress": "运行中",
+    "paused": "已暂停",
+    "done": "已完成",
+    "failed": "运行失败",
+    "aborted": "已终止",
+    "draft": "草稿"
+} %}
+
+<hgroup class="session-header">
+    <h1>育种会话 <code>{{ session.id[-12:] }}</code></h1>
+    <p>
+        <span class="status status-{{ session.status }}">{{ status_labels.get(session.status, session.status) }}</span>
+        <span class="session-goal-label">育种目标：</span>{{ session.research_goal[:200] }}{% if session.research_goal|length > 200 %}…{% endif %}
+    </p>
+</hgroup>
+
+{# 终止原因保留为用户可理解的结论，不展示内部 stop_reason。 #}
+{% if termination_summary.available %}
+<section class="termination-panel termination-{{ termination_summary.state }}">
+    <header>
+        <strong>
+            {% if termination_summary.stop_reason == "pairwise_calibration_stable" %}
+                优先路线已趋于稳定
+            {% elif termination_summary.stop_reason == "breeding_success_ready" %}
+                已形成可推进的育种路线
+            {% elif termination_summary.stop_reason == "breeding_evidence_blocked" %}
+                需要补充证据后再推进
+            {% elif termination_summary.stop_reason == "breeding_max_hypotheses_reached" %}
+                已达到探索上限
+            {% elif termination_summary.stop_reason == "budget" %}
+                已达到预算限制
+            {% elif termination_summary.stop_reason == "wall_clock" %}
+                已达到运行时间限制
+            {% elif termination_summary.stop_reason == "external" %}
+                运行已停止
+            {% else %}
+                研究分析已结束
+            {% endif %}
+        </strong>
+    </header>
+    <p>
+        {% if termination_summary.stop_reason == "pairwise_calibration_stable" %}
+            经过多轮比较，当前优先路线已经保持稳定，可以查看最终综述并进入后续验证。
+        {% elif termination_summary.stop_reason == "breeding_success_ready" %}
+            系统已经筛选出可以进入最终审核和验证规划的育种路线。
+        {% elif termination_summary.stop_reason == "breeding_evidence_blocked" %}
+            当前路线仍存在证据缺口或冲突，请先补充验证材料。
+        {% elif termination_summary.stop_reason == "breeding_max_hypotheses_reached" %}
+            已完成本轮探索，但候选路线数量已达到设定上限。
+        {% elif termination_summary.stop_reason == "budget" %}
+            本次分析已达到预算限制，当前结果仍可查看。
+        {% elif termination_summary.stop_reason == "wall_clock" %}
+            本次分析已达到运行时间限制，当前结果仍可查看。
+        {% elif termination_summary.stop_reason == "external" %}
+            本次分析由用户停止，已经生成的结果仍可查看。
+        {% else %}
+            本次分析已经结束，当前结果仍可查看。
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+
+{% if acceptance.available %}
+<section class="termination-panel termination-{{ 'keep' if acceptance.status == 'pass' else 'revise' }}">
+    <header><strong>结果验收</strong></header>
+    <p>
+        {% if acceptance.status == "pass" %}
+            自动验收已通过，可以继续查看和使用本次育种结果。
+        {% else %}
+            自动验收发现待处理问题，建议先查看最终综述中的说明。
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+
+<section class="grid session-summary-grid">
+    <article>
+        <header><strong>预算使用</strong></header>
+        <p>${{ "%.2f"|format(session.budget_used_usd) }} / ${{ "%.2f"|format(session.budget_usd) }}
+        （{{ "%.0f"|format(100 * session.budget_used_usd / session.budget_usd if session.budget_usd > 0 else 0) }}%）</p>
+        <progress value="{{ session.budget_used_usd }}" max="{{ session.budget_usd }}"></progress>
+    </article>
+</section>
+
+<div class="grid session-actions">
+    {% if session.status in ["running", "in_progress"] %}
+    <button hx-post="/api/sessions/{{ session.id }}/pause" hx-swap="none">暂停分析</button>
+    <button hx-post="/api/sessions/{{ session.id }}/abort" hx-swap="none" hx-confirm="确认终止这个会话？" class="contrast">终止分析</button>
+    {% elif session.status == "paused" %}
+    <button hx-post="/api/sessions/{{ session.id }}/resume" hx-swap="none">继续分析</button>
+    <button hx-post="/api/sessions/{{ session.id }}/abort" hx-swap="none" hx-confirm="确认终止这个会话？" class="contrast">终止分析</button>
+    {% endif %}
+    {% if session.final_overview %}
+    <a href="/sessions/{{ session.id }}/overview" role="button">查看最终综述 →</a>
+    {% endif %}
+    {% if evidence_graph.available %}
+    <a href="/sessions/{{ session.id }}/evidence-graph" role="button" class="secondary">查看总证据图谱</a>
+    {% endif %}
+    {% if route_revision_graph.available %}
+    <a href="/sessions/{{ session.id }}/route-revision-graph" role="button" class="secondary">查看路线修订图</a>
+    {% endif %}
+    <a href="/sessions/{{ session.id }}/agent-outputs" role="button" class="secondary">六智能体成果审阅 →</a>
+</div>
+
+<section class="agent-status-section" data-session-id="{{ session.id }}">
+    <h2>六智能体执行状态</h2>
+    <div class="agent-current-banner" data-current-agent-banner>
+        <strong>当前工作：</strong>
+        {% for agent in six_agent_summary if agent.active %}
+            <span class="status-pill active" data-current-agent="{{ agent.name }}">{{ agent.label or agent.name }}{% if agent.steps %} · {{ agent.steps|join("、") }}{% endif %}</span>
+        {% else %}
+            <span class="muted" data-no-current-agent>当前没有正在执行的智能体</span>
+        {% endfor %}
+    </div>
+    <div class="six-agent-grid">
+        {% for agent in six_agent_summary %}
+        <article class="six-agent-card" data-agent-card="{{ agent.name }}" data-initial-active="{{ 'true' if agent.active else 'false' }}">
+            <details>
+            <summary class="agent-card-summary">
+                <div>
+                    <strong>{{ agent.label or agent.name }}</strong>
+                </div>
+                {% if agent.active %}
+                <span class="status-pill active" data-agent-status>工作中</span>
+                {% elif agent.failed %}
+                <span class="status-pill failed" data-agent-status>失败</span>
+                {% elif agent.pending %}
+                <span class="status-pill pending" data-agent-status>排队中</span>
+                {% elif agent.done %}
+                <span class="status-pill done" data-agent-status>已完成</span>
+                {% else %}
+                <span class="status-pill cancelled" data-agent-status>未开始</span>
+                {% endif %}
+                <span class="agent-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="agent-card-body">
+                <p class="agent-step{% if not agent.steps %} muted{% endif %}" data-agent-step>{% if agent.steps %}当前步骤：{{ agent.steps|join("、") }}{% else %}等待任务进入队列{% endif %}</p>
+                <div class="agent-stream" data-agent-stream aria-live="polite">
+                    <p class="muted" data-agent-stream-empty>实时进度将在智能体工作时显示。</p>
+                </div>
+                {% if agent.outputs %}
+                {% set latest_output = agent.outputs[0] %}
+                <div class="agent-latest-output">
+                    <small>最近一次结果</small>
+                    <strong>{{ latest_output.title }}</strong>
+                    <p class="agent-output-summary">{{ latest_output.summary }}</p>
+                    {% if latest_output.url %}
+                    <a href="{{ latest_output.url }}">查看完整结果 →</a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="muted">暂时没有可展示的具体输出。</p>
+                {% endif %}
+            </div>
+            </details>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% block scripts %}
+<script>
+(() => {
+    const section = document.querySelector("[data-session-id]");
+    if (!section || !window.EventSource) return;
+
+    const sessionId = section.dataset.sessionId;
+    const banner = section.querySelector("[data-current-agent-banner]");
+    const cards = new Map(
+        [...section.querySelectorAll("[data-agent-card]")].map((card) => [card.dataset.agentCard, card])
+    );
+    const activeTasks = new Map();
+    const stepLabels = {
+        "Goal parsing": "解析育种目标",
+        "Evidence graph curation": "整理证据图谱",
+        "Hypothesis design": "设计育种假设",
+        "Route revision and expansion": "修订与扩展育种路线",
+        "Validation planning": "制定验证计划",
+        "Risk review": "评估育种风险",
+        "Evidence review": "审查路线证据",
+        "Pairwise calibration": "进行路线排序校准",
+        "System feedback": "整理迭代反馈",
+        "Final synthesis": "生成最终综述",
+        "Queue decision and closure": "编排任务并判断闭环",
+        "Task orchestration": "编排任务队列"
+    };
+
+    function labelForStep(step) {
+        return stepLabels[step] || step || "处理当前任务";
+    }
+
+    function taskSet(agent) {
+        if (!activeTasks.has(agent)) activeTasks.set(agent, new Set());
+        return activeTasks.get(agent);
+    }
+
+    function activeFor(agent) {
+        return (activeTasks.get(agent) || new Set()).size > 0;
+    }
+
+    function setStatus(agent, status) {
+        const card = cards.get(agent);
+        if (!card) return;
+        const pill = card.querySelector("[data-agent-status]");
+        if (!pill) return;
+        const labels = { active: "工作中", done: "已完成", failed: "失败", pending: "排队中" };
+        pill.className = `status-pill ${status}`;
+        pill.textContent = labels[status] || "未开始";
+        card.querySelector("details").open = status === "active";
+    }
+
+    function setStep(agent, step) {
+        const card = cards.get(agent);
+        if (!card) return;
+        const target = card.querySelector("[data-agent-step]");
+        if (!target) return;
+        target.classList.remove("muted");
+        target.textContent = `当前步骤：${labelForStep(step)}`;
+    }
+
+    function appendProgress(agent, message, phase) {
+        const card = cards.get(agent);
+        if (!card || !message) return;
+        const stream = card.querySelector("[data-agent-stream]");
+        if (!stream) return;
+        const empty = stream.querySelector("[data-agent-stream-empty]");
+        if (empty) empty.remove();
+        const item = document.createElement("p");
+        item.className = `agent-stream-entry agent-stream-${phase || "progress"}`;
+        item.textContent = message;
+        stream.appendChild(item);
+        while (stream.children.length > 8) stream.firstElementChild.remove();
+        stream.scrollTop = stream.scrollHeight;
+    }
+
+    function refreshBanner() {
+        if (!banner) return;
+        banner.querySelectorAll("[data-current-agent], [data-no-current-agent]").forEach((node) => node.remove());
+        const active = [...cards.entries()].filter(([agent]) => activeFor(agent));
+        if (!active.length) {
+            const empty = document.createElement("span");
+            empty.className = "muted";
+            empty.dataset.noCurrentAgent = "";
+            empty.textContent = "当前没有正在执行的智能体";
+            banner.appendChild(empty);
+            return;
+        }
+        active.forEach(([agent, card]) => {
+            const badge = document.createElement("span");
+            badge.className = "status-pill active";
+            badge.dataset.currentAgent = agent;
+            badge.textContent = card.querySelector(".agent-card-summary strong")?.textContent || agent;
+            banner.appendChild(badge);
+        });
+    }
+
+    function payloadFrom(event) {
+        try {
+            const raw = JSON.parse(event.data || "{}");
+            return raw.payload || raw;
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function handleEvent(eventName, event) {
+        const payload = payloadFrom(event);
+        const agent = payload.agent || payload.core_agent;
+        if (!agent || !cards.has(agent)) return;
+        const taskId = payload.task_id || `${agent}:${eventName}`;
+        const step = payload.agent_step || payload.public_action;
+        if (step) setStep(agent, step);
+
+        if (eventName === "task_started") {
+            taskSet(agent).add(taskId);
+            setStatus(agent, "active");
+            appendProgress(agent, `已开始：${labelForStep(step)}`, "started");
+        } else if (eventName === "agent_progress") {
+            taskSet(agent).add(taskId);
+            setStatus(agent, "active");
+            appendProgress(agent, payload.message || `正在${labelForStep(step)}……`, payload.phase || "progress");
+        } else if (eventName === "task_completed") {
+            taskSet(agent).delete(taskId);
+            appendProgress(agent, payload.message || `已完成：${labelForStep(step)}`, "completed");
+            if (!activeFor(agent)) setStatus(agent, "done");
+        } else if (eventName === "task_failed") {
+            taskSet(agent).delete(taskId);
+            setStatus(agent, "failed");
+            appendProgress(agent, payload.err ? `执行失败：${payload.err}` : "执行失败，请查看错误详情。", "failed");
+        } else if (eventName === "task_deferred_budget") {
+            taskSet(agent).delete(taskId);
+            setStatus(agent, "pending");
+            appendProgress(agent, "当前任务因预算限制暂缓，等待后续处理。", "progress");
+        }
+        refreshBanner();
+    }
+
+    const source = new EventSource(`/api/sessions/${encodeURIComponent(sessionId)}/events`);
+    ["task_started", "agent_progress", "task_completed", "task_failed", "task_deferred_budget"].forEach((name) => {
+        source.addEventListener(name, (event) => handleEvent(name, event));
+    });
+    source.onerror = () => {
+        section.classList.add("agent-stream-reconnecting");
+    };
+    source.onopen = () => {
+        section.classList.remove("agent-stream-reconnecting");
+    };
+})();
+</script>
+{% endblock %}
+
+{% if ranked_hypotheses %}
+<section>
+    <h2>推荐育种路线</h2>
+    <p class="leaderboard-summary">以下路线是当前最值得优先关注和验证的候选方案。</p>
+    <div class="table-scroll">
+        <table id="prioritized-routes">
+            <thead>
+                <tr>
+                    <th>优先级</th>
+                    <th>育种路线</th>
+                    <th>当前建议</th>
+                    <th>下一步</th>
+                    <th>路线证据</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for h in ranked_hypotheses %}
+            {% set decision = latest_iteration_decisions.get(h.id) %}
+            {% set decision_display = display_iteration_decisions.get(h.id) %}
+            <tr>
+                <td><strong>#{{ loop.index }}</strong></td>
+                <td>
+                    <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}">{{ h.title or "未命名路线" }}</a>
+                    <br><small>{{ hypothesis_lifecycle_label(h.state) }}</small>
+                </td>
+                <td>
+                    {% if decision %}
+                        <span class="decision-badge decision-{{ decision.action }}">{{ decision_display.display.action_label if decision_display.display else decision.action }}</span>
+                    {% else %}
+                        <span class="muted">待评估</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set direction = decision_display.display_route_revision_intent.direction_label if decision_display and decision_display.display_route_revision_intent else "" %}
+                    {% if direction %}
+                        {{ direction }}
+                    {% elif decision and decision.new_hypothesis_direction %}
+                        {{ decision.new_hypothesis_direction }}
+                    {% elif decision and decision.reason_summary %}
+                        {{ decision_display.display.reasons[0] if decision_display and decision_display.display and decision_display.display.reasons else decision.reason_summary }}
+                    {% else %}
+                        根据路线详情继续确认验证条件
+                    {% endif %}
+                </td>
+                <td>
+                    {% if decision and decision.has_evidence_package %}
+                    <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}/evidence-subgraph">查看路线证据图谱 →</a>
+                    {% else %}
+                    <span class="muted">暂未建立</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% elif session.status in ["running", "in_progress", "paused"] %}
+<section>
+    <h2>推荐育种路线</h2>
+    <p><em>系统正在整理证据和候选路线，请稍后查看。</em></p>
+</section>
+{% endif %}
+
+{% if pending_hypotheses %}
+<section>
+    <h2>需要进一步处理的路线</h2>
+    <div class="table-scroll">
+        <table id="pending-routes">
+            <thead>
+                <tr>
+                    <th>育种路线</th>
+                    <th>当前情况</th>
+                    <th>建议下一步</th>
+                    <th>路线证据</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for h in pending_hypotheses %}
+            {% set decision = latest_iteration_decisions.get(h.id) %}
+            {% set admission = route_admissions.get(h.id) %}
+            <tr>
+                <td><a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}">{{ h.title or "未命名路线" }}</a></td>
+                <td>
+                    {% for reason in admission.reasons %}
+                        {{ reason }}{% if not loop.last %}<br>{% endif %}
+                    {% else %}
+                        仍在评估中
+                    {% endfor %}
+                </td>
+                <td>{{ admission.next_step or "查看路线详情并补充验证" }}</td>
+                <td>
+                    {% if decision and decision.has_evidence_package %}
+                    <a href="/sessions/{{ session.id }}/hypotheses/{{ h.id }}/evidence-subgraph">查看路线证据图谱 →</a>
+                    {% else %}
+                    <span class="muted">暂未建立</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+{% if germplasm_resources %}
+<section>
+    <h2>可参考的种质资源</h2>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>材料</th>
+                    <th>用途 / 性状线索</th>
+                    <th>来源</th>
+                    <th>风险 / 证据缺口</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in germplasm_resources %}
+                <tr>
+                    <td>{{ row["Material"] }}</td>
+                    <td>{{ row["Use / trait clue"] }}</td>
+                    <td>
+                        {% for source in row["Source"].split(";") %}
+                            {% set source = source.strip() %}
+                            {% if source %}
+                                <a href="{{ source }}" target="_blank" rel="noopener">查看来源</a>{% if not loop.last %}<br>{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ row["Risk / evidence gap"] }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

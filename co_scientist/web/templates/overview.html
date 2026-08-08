@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}最终育种报告 · {{ session.id[-12:] }}{% endblock %}
+{% block body_class %}overview-body{% endblock %}
+{% block content %}
+<nav class="overview-breadcrumb" aria-label="breadcrumb">
+    <a href="/">育种会话</a>
+    <span>/</span>
+    <a href="/sessions/{{ session.id }}">返回当前会话</a>
+    <span>/</span>
+    <strong>最终育种报告</strong>
+</nav>
+
+<header class="overview-hero">
+    <div>
+        <p class="overview-kicker">BREEDING SCIENTIST / FINAL REPORT</p>
+        <h1>最终育种报告</h1>
+        <p>汇总本次育种分析形成的优先路线、证据依据、验证方案和风险提示。</p>
+    </div>
+    {% if acceptance.available %}
+    <span class="overview-status {{ 'is-ready' if acceptance.status == 'pass' else 'is-review' }}">
+        {{ '结果已通过检查' if acceptance.status == 'pass' else '结果需要复核' }}
+    </span>
+    {% endif %}
+</header>
+
+{% if has_chinese_overview or has_english_overview %}
+<div class="overview-language-switcher" aria-label="报告语言">
+    <span>报告语言</span>
+    {% if has_chinese_overview %}
+    <a href="/sessions/{{ session.id }}/overview?lang=zh" class="{{ 'is-active' if language == 'zh' else '' }}">中文版</a>
+    {% endif %}
+    {% if has_english_overview %}
+    <a href="/sessions/{{ session.id }}/overview?lang=en" class="{{ 'is-active' if language == 'en' else '' }}">English</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<article class="overview-report markdown-body">
+    {{ overview_html | safe }}
+</article>
+
+<details class="overview-advanced-details">
+    <summary>查看高级信息与审计记录</summary>
+    <div class="overview-advanced-content">
+        {% if acceptance.available %}
+        <section>
+            <h2>结果验收</h2>
+            <p>{{ '自动验收已通过。' if acceptance.status == 'pass' else '自动验收发现待处理项目。' }}</p>
+            {% if acceptance.failed_checks %}
+            <ul>
+                {% for name in acceptance.failed_checks %}
+                <li>{{ name }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </section>
+        {% endif %}
+        {% if knowledge_snapshot.snapshot_id %}
+        <section>
+            <h2>知识版本</h2>
+            <p>本报告基于当时的知识库快照生成。</p>
+            <dl>
+                <dt>知识快照</dt><dd><code>{{ knowledge_snapshot.snapshot_id }}</code></dd>
+                {% if knowledge_snapshot.active_batch_id %}<dt>知识批次</dt><dd><code>{{ knowledge_snapshot.active_batch_id }}</code></dd>{% endif %}
+            </dl>
+        </section>
+        {% endif %}
+        <details class="overview-raw-details">
+            <summary>查看原始报告文本</summary>
+            <pre>{{ overview_md }}</pre>
+        </details>
+    </div>
+</details>
+{% endblock %}

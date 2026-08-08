@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "name": "crop_kg_pack_template",
+    "version": "0.1.0",
+    "crop_key": "replace_with_crop_key",
+    "crop_name": "replace with crop common name",
+    "scientific_name": "replace with scientific name",
+    "last_updated": "YYYY-MM-DD",
+    "scope": "Local crop-pack knowledge graph for minor-grain breeding hypotheses. Claims are evidence clues that require source-aware validation.",
+    "source_boundary": "Use DOI, URL, local-rag URI, local experiment record ID, or advisor-confirmed record. Do not add unsupported claims.",
+    "maintainer_notes": "Copy this file to docs/templates/<crop_key>_kg_seed.json, fill nodes and edges, validate with scripts/validate_crop_kg.py, then register it in [knowledge.crop_kg_packs]."
+  },
+  "nodes": [],
+  "edges": []
+}

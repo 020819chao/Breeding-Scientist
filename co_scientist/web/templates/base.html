@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Breeding Scientist · 育种科学家{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="/static/app.css?v=20260808-route-nav">
+    <script>
+        (() => {
+            const palettes = {
+                green: { color: "#16865f", hover: "#2a9d76", pressed: "#0f6848", soft: "#eaf7ef" },
+                gold: { color: "#b8771e", hover: "#ca8c35", pressed: "#8e5b12", soft: "#fff6e7" },
+                purple: { color: "#7046b6", hover: "#855fc3", pressed: "#57358f", soft: "#f3edff" },
+            };
+            const palette = palettes[localStorage.getItem("co-scientist-theme")] || palettes.green;
+            const root = document.documentElement;
+            root.style.setProperty("--theme-color", palette.color);
+            root.style.setProperty("--theme-color-hover", palette.hover);
+            root.style.setProperty("--theme-color-pressed", palette.pressed);
+            root.style.setProperty("--theme-soft", palette.soft);
+        })();
+    </script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<nav class="container-fluid site-nav">
+    <ul class="site-nav-brand-list">
+        <li><strong><a class="site-brand" href="/" style="text-decoration:none"><span class="site-brand-mark">BS</span><span><b>Breeding Scientist</b><small>育种科学家</small></span></a></strong></li>
+    </ul>
+    <ul class="site-nav-links">
+        <li><a href="/knowledge">知识库</a></li>
+        <li><a href="/sessions">育种方案</a></li>
+    </ul>
+    <ul class="site-nav-actions">
+        <li><button type="button" class="site-nav-pill" data-language-toggle><span aria-hidden="true">文A</span><span data-language-label>中文</span></button></li>
+        <li>
+            <details class="site-nav-theme">
+                <summary><span class="site-nav-theme-dot"></span>色调 <span class="site-nav-chevron">⌄</span></summary>
+                <ul>
+                    <li><button type="button" data-theme="green"><span class="site-nav-theme-dot green"></span>绿色</button></li>
+                    <li><button type="button" data-theme="gold"><span class="site-nav-theme-dot gold"></span>金色</button></li>
+                    <li><button type="button" data-theme="purple"><span class="site-nav-theme-dot purple"></span>紫色</button></li>
+                </ul>
+            </details>
+        </li>
+        <li><a href="/sessions/new" role="button">新建育种会话</a></li>
+    </ul>
+</nav>
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+<script>
+    (() => {
+        const palettes = {
+            green: { color: "#16865f", hover: "#2a9d76", pressed: "#0f6848", soft: "#eaf7ef" },
+            gold: { color: "#b8771e", hover: "#ca8c35", pressed: "#8e5b12", soft: "#fff6e7" },
+            purple: { color: "#7046b6", hover: "#855fc3", pressed: "#57358f", soft: "#f3edff" },
+        };
+        const applyTheme = (name) => {
+            const palette = palettes[name] || palettes.green;
+            const root = document.documentElement;
+            root.style.setProperty("--theme-color", palette.color);
+            root.style.setProperty("--theme-color-hover", palette.hover);
+            root.style.setProperty("--theme-color-pressed", palette.pressed);
+            root.style.setProperty("--theme-soft", palette.soft);
+            localStorage.setItem("co-scientist-theme", name in palettes ? name : "green");
+        };
+        applyTheme(localStorage.getItem("co-scientist-theme") || "green");
+        document.querySelectorAll("[data-theme]").forEach((button) => button.addEventListener("click", () => applyTheme(button.dataset.theme)));
+        const languageButton = document.querySelector("[data-language-toggle]");
+        const languageLabel = document.querySelector("[data-language-label]");
+        const language = localStorage.getItem("co-scientist-language") || "zh";
+        if (languageLabel) languageLabel.textContent = language === "en" ? "English" : "中文";
+        if (languageButton) languageButton.addEventListener("click", () => {
+            const next = (localStorage.getItem("co-scientist-language") || "zh") === "zh" ? "en" : "zh";
+            localStorage.setItem("co-scientist-language", next);
+            if (languageLabel) languageLabel.textContent = next === "en" ? "English" : "中文";
+        });
+    })();
+</script>
+</body>
+</html>

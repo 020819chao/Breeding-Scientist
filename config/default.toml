@@ -1,0 +1,208 @@
+# AI Breeding Scientist 鈥?default configuration
+# User overrides: ~/.co-scientist/config.toml or ./co-scientist.toml
+# Secrets: env vars only (ANTHROPIC_API_KEY, VOYAGE_API_KEY, TAVILY_API_KEY, ...)
+
+[run]
+concurrency = 4
+max_ideas = 60
+max_pairwise_checks_per_hypothesis = 12
+wall_clock_seconds = 7200            # 2h default
+budget_tokens = 5_000_000
+budget_usd = 25.0
+
+[storage]
+data_dir = "./data"
+
+[science_skills]
+path = "./vendor/science-skills"
+pinned_commit = ""                   # set after first clone
+
+[embeddings]
+provider = "voyage"                  # voyage | openai
+model = "voyage-3-large"
+dim = 1024
+
+[vectors]
+backend = "faiss"
+dedup_cosine_threshold = 0.92
+
+[knowledge]
+incoming_dir = "./data/knowledge/incoming"
+quarantine_dir = "./data/knowledge/quarantine"
+processed_dir = "./data/knowledge/processed"
+incoming_watch_enabled = true
+incoming_watch_interval_seconds = 5.0
+incoming_stability_seconds = 3.0
+allow_direct_activation = false
+germplasm_csv = "./docs/templates/germplasm_resources_public_seed.csv"
+# Generic crop-pack KG entry point.
+crop_kg_json = "./docs/templates/foxtail_millet_kg_seed.json"
+rag_sources_dir = "./docs/rag_sources"
+rag_index_json = "./data/rag/evidence_index.json"
+marker_qtl_csv = "./docs/templates/marker_qtl_library_seed.csv"
+phenotype_protocol_csv = "./docs/templates/phenotype_protocol_library_seed.csv"
+field_trial_csv = "./docs/templates/field_trial_records_seed.csv"
+
+[knowledge.crop_kg_packs]
+# Copy docs/templates/crop_kg_pack_template.json, fill it, then register it here.
+# Add extra minor-grain KG packs here, for example:
+# sorghum = "./docs/templates/sorghum_kg_seed.json"
+# buckwheat = "./docs/templates/buckwheat_kg_seed.json"
+rice = "./docs/templates/rice_kg_seed.json"
+
+[pairwise_calibration]
+k_factor_new = 32
+k_factor_warm = 16
+pairwise_calibration_initial = 1200
+debate_when_pairwise_calibration_delta_lt = 50
+debate_when_pairwise_calibrations_lt = 2
+batch_below_decile = true
+batch_submit_every_seconds = 1800    # 30 min
+p_new = 0.4
+p_close = 0.4
+p_random = 0.2
+
+[termination]
+pairwise_calibration_stability_k = 5      # top-K tracked
+pairwise_calibration_stability_n = 3      # snapshots compared
+pairwise_calibration_stability_eps = 25.0
+pairwise_calibration_snapshot_every = 5
+min_pairwise_calibrations_before_stable = 15
+min_pairwise_calibrations_per_hypothesis = 3
+# Guards: pairwise_calibration_stable cannot fire until these thresholds are met.
+# Default 0 = disabled (preserves original behaviour).
+# Deep runs should set min_ideas_before_stable >= max_ideas / 2.
+min_ideas_before_stable = 0
+
+[route_revision]
+# Minimum number of *mature* hypotheses (>= 3 pairwise calibrations) before the
+# supervisor schedules a route revision / expansion pass. Lower this for deep runs where
+# the pool size is larger than the default 60-idea session.
+min_mature = 20
+# How many top hypotheses to revise or expand per idle pass.
+top_k = 5
+
+[budget_shares]
+goal_interpreter      = 0.05
+evidence_curator      = 0.15
+breeding_designer     = 0.35
+validation_planner    = 0.10
+risk_reviewer         = 0.10
+iteration_orchestrator = 0.17
+reserve               = 0.06
+
+[models]
+goal_interpreter          = "claude-sonnet-4-6"
+breeding_designer         = "claude-opus-4-7"
+breeding_designer_revision = "claude-opus-4-7"
+risk_reviewer_evidence         = "claude-opus-4-7"
+validation_planner        = "claude-opus-4-7"
+risk_reviewer             = "claude-opus-4-7"
+pairwise_calibration      = "claude-sonnet-4-6"
+calibration_debate        = "claude-sonnet-4-6"
+composite_prioritization  = "claude-opus-4-7"
+iteration_feedback        = "claude-sonnet-4-6"
+final_synthesis           = "claude-opus-4-7"
+classifier                = "claude-haiku-4-5-20251001"
+judge                     = "claude-sonnet-4-6"
+
+[thinking]
+# Per-step thinking budgets; 0 = disabled.
+breeding_designer_literature   = 4000
+breeding_designer_debate       = 8000
+risk_reviewer_evidence              = 0
+verification_review            = 12000
+observation_review             = 6000
+pairwise_calibration           = 4000
+calibration_debate             = 8000
+route_combine                  = 6000
+route_out_of_box               = 6000
+route_feasibility              = 0
+route_simplify                 = 0
+iteration_feedback             = 8000
+final_synthesis                = 16000
+
+[tool_loop]
+breeding_designer_max_iters     = 8
+risk_reviewer_evidence_max_iters     = 8
+pairwise_calibration_max_iters  = 3
+route_revision_max_iters        = 6
+final_synthesis_max_iters       = 12
+parallel_cap                    = 4
+tool_timeout_seconds            = 30
+
+[retry]
+# Anthropic API
+max_attempts_429 = 6
+max_attempts_529 = 8
+max_attempts_5xx = 5
+max_attempts_timeout = 3
+base_ms = 1000
+cap_ms = 60_000
+per_call_timeout_seconds = 120
+per_call_timeout_thinking_seconds = 300
+
+[lease]
+default_seconds           = 300
+risk_reviewer_evidence_seconds = 600
+final_synthesis_seconds   = 1800
+heartbeat_seconds         = 60
+max_attempts              = 3
+
+[web_search]
+provider = "tavily"                  # tavily | brave
+max_results = 8
+
+[web_fetch]
+max_bytes = 5_000_000
+timeout_seconds = 30
+user_agent = "co-scientist/0.1 (+research; contact via project README)"
+
+[code_exec]
+provider = "anthropic"               # anthropic | local
+local_cpu_seconds = 30
+local_mem_mb = 512
+
+[safety]
+enable_classifier = true
+enable_citation_verifier = true
+classifier_block_categories = ["cbrn", "csam", "weapons", "illicit_synthesis"]
+classifier_warn_categories = ["dual_use_bio"]
+
+# LLM provider selection. Choose one of:
+#   "anthropic"  鈥?Claude via the official SDK (default). Full feature set:
+#                  cache breakpoints, extended thinking, batch API.
+#   "openai"     鈥?OpenAI Chat Completions (api.openai.com). Reasoning
+#                  translated to `reasoning_effort` on o-series models.
+#   "openrouter" 鈥?openrouter.ai (200+ models from every major vendor).
+#                  Set OPENROUTER_API_KEY. Models like
+#                  "anthropic/claude-3.5-sonnet", "openai/gpt-5",
+#                  "google/gemini-2.5-pro", "meta-llama/llama-3.3-70b".
+#   "gemini"     鈥?Google Gemini via OpenAI-compat endpoint. Set
+#                  GEMINI_API_KEY. Models: "gemini-2.5-pro",
+#                  "gemini-2.5-flash", "gemini-1.5-pro".
+#   "groq"       鈥?Groq (fast Llama / Mixtral). Set GROQ_API_KEY.
+#   "together"   鈥?Together AI. Set TOGETHER_API_KEY.
+#   "mistral"    鈥?Mistral la-plateforme. Set MISTRAL_API_KEY.
+#   "ollama"     鈥?Local Ollama at http://localhost:11434/v1 (no key needed).
+#   "openai_compatible" 鈥?Any other OpenAI-compatible endpoint; set
+#                  [llm.openai] base_url to point at it.
+#
+# After choosing a provider, set the entries in [models] to model ids it
+# can serve.
+[llm]
+provider = "anthropic"
+
+# For provider = "openai" / "openai_compatible" / any preset above: this
+# overrides the preset's base_url (rarely needed).
+[llm.openai]
+# base_url = ""
+
+# OpenRouter attribution (optional; for catalog ordering).
+[llm.openrouter]
+# referer = "https://your-app.example.com"
+# title   = "My AI Breeding Scientist App"
+
+[web_ui]
+host = "127.0.0.1"
+port = 7878

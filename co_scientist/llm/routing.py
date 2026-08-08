@@ -1,0 +1,217 @@
+﻿"""Model routing per agent.mode + price table for cost accounting.
+
+Price table is approximate and trivially editable as Anthropic posts updates.
+Costs are USD per 1M tokens (input / output / cache write / cache read).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from ..config import Config
+
+# USD per 1M tokens. Cache writes are ~1.25x input; cache reads are ~0.1x input.
+# These are placeholders the user should sanity-check against current vendor
+# pricing before any production use. Unknown models fall back to a
+# conservative sonnet-class default.
+PRICE_TABLE: dict[str, dict[str, float]] = {
+    # Anthropic
+    "claude-opus-4-7":            {"input": 15.0,  "output": 75.0,  "cache_write": 18.75, "cache_read": 1.5},
+    "claude-sonnet-4-6":          {"input":  3.0,  "output": 15.0,  "cache_write":  3.75, "cache_read": 0.3},
+    "claude-haiku-4-5-20251001":  {"input":  1.0,  "output":  5.0,  "cache_write":  1.25, "cache_read": 0.1},
+    "anthropic/claude-haiku-4.5": {"input":  1.0,  "output":  5.0,  "cache_write":  1.25, "cache_read": 0.1},
+    "anthropic/claude-3.5-haiku": {"input":  0.8,  "output":  4.0,  "cache_write":  1.0,  "cache_read": 0.08},
+    # OpenAI (approximate; verify on platform.openai.com/docs/pricing)
+    "gpt-5":                      {"input":  5.0,  "output": 20.0,  "cache_write":  5.0,  "cache_read": 0.5},
+    "gpt-4.1":                    {"input":  2.0,  "output":  8.0,  "cache_write":  2.0,  "cache_read": 0.2},
+    "gpt-4o":                     {"input":  2.5,  "output": 10.0,  "cache_write":  2.5,  "cache_read": 0.25},
+    "gpt-4o-mini":                {"input":  0.15, "output":  0.6,  "cache_write":  0.15, "cache_read": 0.075},
+    "o3":                         {"input":  2.0,  "output":  8.0,  "cache_write":  2.0,  "cache_read": 0.5},
+    "o3-mini":                    {"input":  1.1,  "output":  4.4,  "cache_write":  1.1,  "cache_read": 0.55},
+    "o1":                         {"input": 15.0,  "output": 60.0,  "cache_write": 15.0,  "cache_read": 7.5},
+    "o1-mini":                    {"input":  3.0,  "output": 12.0,  "cache_write":  3.0,  "cache_read": 1.5},
+    # Google (native short names AND OpenAI-compat short names)
+    "gemini-3-pro":               {"input":  2.0,  "output": 12.0,  "cache_write":  2.0,  "cache_read": 0.5},
+    "gemini-3-pro-preview":       {"input":  2.0,  "output": 12.0,  "cache_write":  2.0,  "cache_read": 0.5},
+    "gemini-3-flash":             {"input":  0.3,  "output":  2.5,  "cache_write":  0.3,  "cache_read": 0.075},
+    "gemini-3-flash-preview":     {"input":  0.3,  "output":  2.5,  "cache_write":  0.3,  "cache_read": 0.075},
+    "gemini-2.5-pro":             {"input":  1.25, "output": 10.0,  "cache_write":  1.25, "cache_read": 0.3},
+    "gemini-2.5-flash":           {"input":  0.3,  "output":  2.5,  "cache_write":  0.3,  "cache_read": 0.075},
+    "gemini-2.5-flash-lite":      {"input":  0.1,  "output":  0.4,  "cache_write":  0.1,  "cache_read": 0.025},
+    "gemini-1.5-pro":             {"input":  1.25, "output":  5.0,  "cache_write":  1.25, "cache_read": 0.3},
+    "gemini-1.5-flash":           {"input":  0.075,"output":  0.3,  "cache_write":  0.075,"cache_read": 0.02},
+    # Mistral, Meta (via providers)
+    "mistral-large-latest":       {"input":  2.0,  "output":  6.0,  "cache_write":  2.0,  "cache_read": 0.2},
+    "llama-3.3-70b":              {"input":  0.6,  "output":  0.6,  "cache_write":  0.6,  "cache_read": 0.6},
+    # OpenRouter passes through the upstream provider's price; common routes:
+    "anthropic/claude-opus-4-7":      {"input": 15.0,  "output": 75.0,  "cache_write": 18.75, "cache_read": 1.5},
+    "anthropic/claude-sonnet-4-6":    {"input":  3.0,  "output": 15.0,  "cache_write":  3.75, "cache_read": 0.3},
+    "anthropic/claude-3.5-sonnet":    {"input":  3.0,  "output": 15.0,  "cache_write":  3.75, "cache_read": 0.3},
+    "openai/gpt-5":                   {"input":  5.0,  "output": 20.0,  "cache_write":  5.0,  "cache_read": 0.5},
+    "openai/gpt-4o":                  {"input":  2.5,  "output": 10.0,  "cache_write":  2.5,  "cache_read": 0.25},
+    "openai/gpt-4o-mini":             {"input":  0.15, "output":  0.6,  "cache_write":  0.15, "cache_read": 0.075},
+    "openai/o1":                      {"input": 15.0,  "output": 60.0,  "cache_write": 15.0,  "cache_read": 7.5},
+    "openai/o1-mini":                 {"input":  3.0,  "output": 12.0,  "cache_write":  3.0,  "cache_read": 1.5},
+    "openai/o3":                      {"input":  2.0,  "output":  8.0,  "cache_write":  2.0,  "cache_read": 0.5},
+    "google/gemini-2.0-flash-001":    {"input":  0.1,  "output":  0.4,  "cache_write":  0.1,  "cache_read": 0.025},
+    "google/gemini-2.0-flash-lite-001": {"input": 0.075,"output": 0.3, "cache_write":  0.075, "cache_read": 0.02},
+    "google/gemini-3-pro":            {"input":  2.0,  "output": 12.0,  "cache_write":  2.0,  "cache_read": 0.5},
+    "google/gemini-3-pro-preview":    {"input":  2.0,  "output": 12.0,  "cache_write":  2.0,  "cache_read": 0.5},
+    "google/gemini-3-flash":          {"input":  0.3,  "output":  2.5,  "cache_write":  0.3,  "cache_read": 0.075},
+    "google/gemini-3-flash-preview":  {"input":  0.3,  "output":  2.5,  "cache_write":  0.3,  "cache_read": 0.075},
+    "google/gemini-2.5-pro":          {"input":  1.25, "output": 10.0,  "cache_write":  1.25, "cache_read": 0.3},
+    "google/gemini-2.5-flash":        {"input":  0.3,  "output":  2.5,  "cache_write":  0.3,  "cache_read": 0.075},
+    "google/gemini-2.5-flash-lite":   {"input":  0.1,  "output":  0.4,  "cache_write":  0.1,  "cache_read": 0.025},
+    "meta-llama/llama-3.3-70b-instruct": {"input": 0.6, "output": 0.6,  "cache_write":  0.6,  "cache_read": 0.6},
+    "mistralai/mistral-large":        {"input":  2.0,  "output":  6.0,  "cache_write":  2.0,  "cache_read": 0.2},
+}
+
+# Conservative fallback for any model name not in the table — we'd rather
+# over-estimate cost than free-run a misconfigured route.
+_FALLBACK_PRICE = {"input": 3.0, "output": 15.0, "cache_write": 3.75, "cache_read": 0.3}
+
+
+# Family hints: substring → representative price. When `estimate_cost_usd` is
+# called with a model id we don't recognise (e.g. a brand-new preview), match
+# the first family fragment and use its price tier. Order matters: more
+# specific patterns first.
+_FAMILY_PRICE_HINTS: list[tuple[str, dict[str, float]]] = [
+    # Flash / Lite / Mini variants — cheap tier
+    ("flash-lite", {"input": 0.1,  "output": 0.4,  "cache_write": 0.1,  "cache_read": 0.025}),
+    ("flash",      {"input": 0.3,  "output": 2.5,  "cache_write": 0.3,  "cache_read": 0.075}),
+    ("haiku",      {"input": 1.0,  "output": 5.0,  "cache_write": 1.25, "cache_read": 0.1}),
+    ("4o-mini",    {"input": 0.15, "output": 0.6,  "cache_write": 0.15, "cache_read": 0.075}),
+    ("mini",       {"input": 1.1,  "output": 4.4,  "cache_write": 1.1,  "cache_read": 0.55}),
+    ("nano",       {"input": 0.1,  "output": 0.4,  "cache_write": 0.1,  "cache_read": 0.025}),
+    # Mid tier
+    ("sonnet",     {"input": 3.0,  "output": 15.0, "cache_write": 3.75, "cache_read": 0.3}),
+    ("gpt-4o",     {"input": 2.5,  "output": 10.0, "cache_write": 2.5,  "cache_read": 0.25}),
+    ("gpt-4.1",    {"input": 2.0,  "output":  8.0, "cache_write": 2.0,  "cache_read": 0.2}),
+    ("gemini",     {"input": 1.25, "output": 10.0, "cache_write": 1.25, "cache_read": 0.3}),
+    # High tier
+    ("opus",       {"input": 15.0, "output": 75.0, "cache_write": 18.75,"cache_read": 1.5}),
+    ("gpt-5",      {"input": 5.0,  "output": 20.0, "cache_write": 5.0,  "cache_read": 0.5}),
+    ("o3",         {"input": 2.0,  "output":  8.0, "cache_write": 2.0,  "cache_read": 0.5}),
+    ("o1",         {"input": 15.0, "output": 60.0, "cache_write": 15.0, "cache_read": 7.5}),
+    ("llama",      {"input": 0.6,  "output":  0.6, "cache_write": 0.6,  "cache_read": 0.6}),
+    ("mistral",    {"input": 2.0,  "output":  6.0, "cache_write": 2.0,  "cache_read": 0.2}),
+    ("qwen",       {"input": 0.4,  "output":  0.4, "cache_write": 0.4,  "cache_read": 0.4}),
+    ("deepseek",   {"input": 0.5,  "output":  1.5, "cache_write": 0.5,  "cache_read": 0.1}),
+]
+
+
+def _price_for_model(model: str) -> dict[str, float]:
+    """Look up `model` in PRICE_TABLE; fall back to a family hint by substring."""
+    direct = PRICE_TABLE.get(model)
+    if direct is not None:
+        return direct
+    ml = model.lower()
+    for needle, price in _FAMILY_PRICE_HINTS:
+        if needle in ml:
+            return price
+    return _FALLBACK_PRICE
+
+
+# Soft fallback chain: if a degraded route is requested, walk this list once.
+DEGRADE_CHAIN = [
+    "claude-opus-4-7",
+    "claude-sonnet-4-6",
+    "claude-haiku-4-5-20251001",
+]
+
+
+# never-degrade modes — config flag overrides require explicit user override
+NEVER_DEGRADE = {"risk_reviewer.verification", "iteration_orchestrator.final"}
+
+
+@dataclass
+class ModelRoute:
+    agent: str
+    mode: str         # e.g. "breeding_designer.literature"
+    model: str
+    thinking_tokens: int = 0
+
+
+def thinking_budget_for(cfg: Config, mode: str) -> int:
+    """Translate a mode key into the configured thinking budget."""
+    th = cfg.thinking
+    return {
+        "breeding_designer.literature": th.breeding_designer_literature,
+        "breeding_designer.debate": th.breeding_designer_debate,
+        "breeding_designer.combine": th.route_combine,
+        "breeding_designer.out_of_box": th.route_out_of_box,
+        "breeding_designer.feasibility": th.route_feasibility,
+        "breeding_designer.simplify": th.route_simplify,
+        "risk_reviewer.evidence_review": th.risk_reviewer_evidence,
+        "risk_reviewer.verification": th.verification_review,
+        "risk_reviewer.observation": th.observation_review,
+        "iteration_orchestrator.pairwise": th.pairwise_calibration,
+        "iteration_orchestrator.debate": th.calibration_debate,
+        "iteration_orchestrator.system": th.iteration_feedback,
+        "iteration_orchestrator.final": th.final_synthesis,
+        "iteration_orchestrator.final_repair": th.final_synthesis,
+    }.get(mode, 0)
+
+
+def route(cfg: Config, agent: str, mode: str | None = None, *, degraded: bool = False) -> ModelRoute:
+    """Pick a model for a given (agent, mode). If `degraded`, walk one step down."""
+    m = cfg.models
+    model = {
+        ("breeding_designer", "literature"): m.breeding_designer,
+        ("breeding_designer", "debate"): m.breeding_designer,
+        ("breeding_designer", "combine"): m.breeding_designer_revision,
+        ("breeding_designer", "out_of_box"): m.breeding_designer_revision,
+        ("breeding_designer", "feasibility"): m.breeding_designer_revision,
+        ("breeding_designer", "simplify"): m.breeding_designer_revision,
+        ("risk_reviewer", "evidence_review"): m.risk_reviewer_evidence,
+        ("risk_reviewer", "verification"): m.risk_reviewer_evidence,
+        ("risk_reviewer", "observation"): m.risk_reviewer_evidence,
+        ("iteration_orchestrator", "pairwise"): m.pairwise_calibration,
+        ("iteration_orchestrator", "debate"): m.calibration_debate,
+        ("iteration_orchestrator", "priority"): m.composite_prioritization,
+        ("iteration_orchestrator", "system"): m.iteration_feedback,
+        ("iteration_orchestrator", "final"): m.final_synthesis,
+        ("iteration_orchestrator", "final_repair"): m.final_synthesis,
+        ("parse_goal", None):          m.goal_interpreter,
+        ("goal_interpreter", None):     m.goal_interpreter,
+        ("classifier", None):          m.classifier,
+        ("judge", None):               m.judge,
+    }.get((agent, mode), m.breeding_designer)
+
+    full_mode = f"{agent}.{mode}" if mode else agent
+    if degraded and full_mode not in NEVER_DEGRADE and model in DEGRADE_CHAIN:
+        i = DEGRADE_CHAIN.index(model)
+        if i + 1 < len(DEGRADE_CHAIN):
+            model = DEGRADE_CHAIN[i + 1]
+
+    th = thinking_budget_for(cfg, full_mode) if not degraded else 0
+    # Thinking only on Opus by convention.
+    if not model.startswith("claude-opus"):
+        th = 0
+
+    return ModelRoute(agent=agent, mode=mode or "", model=model, thinking_tokens=th)
+
+
+def estimate_cost_usd(
+    *,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    cache_read: int = 0,
+    cache_write: int = 0,
+) -> float:
+    """Convert token usage into USD using PRICE_TABLE.
+
+    Anthropic's `usage.input_tokens` is the uncached input count — cache_read /
+    cache_write are reported separately. Unknown models pick up a family-hint
+    price (so "google/gemini-3-flash-preview" prices like a flash even before
+    we add it to the table); models with no family hint fall back to a
+    conservative sonnet-class default.
+    """
+    p = _price_for_model(model)
+    return (
+        input_tokens * p["input"]
+        + output_tokens * p["output"]
+        + cache_write * p["cache_write"]
+        + cache_read * p["cache_read"]
+    ) / 1_000_000

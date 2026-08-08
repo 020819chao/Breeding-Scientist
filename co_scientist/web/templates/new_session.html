@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}New breeding plan - AI Breeding Scientist{% endblock %}
+{% block body_class %}new-session-body{% endblock %}
+{% block content %}
+<div class="new-session-page">
+    <header class="new-session-intro">
+        <a class="new-session-back" href="/">← 返回方案工作台</a>
+        <p class="new-session-kicker"><span></span> BREEDING PLAN DESIGN · 育种方案设计</p>
+        <h1>把育种目标，变成<br><em>可执行的育种方案</em></h1>
+        <p class="new-session-lead">描述你的目标、约束和偏好，育种科学家将组织证据、设计候选路线，并生成可验证的方案。</p>
+    </header>
+
+    <div class="new-session-layout">
+        <form class="new-session-form" method="POST" action="/sessions/new">
+            <section class="new-form-section new-goal-section">
+                <div class="new-section-index">01</div>
+                <div class="new-form-content">
+                    <p class="new-form-kicker">START WITH THE GOAL</p>
+                    <h2>先说清楚你要解决的育种目标</h2>
+                    <p class="new-form-description">目标越具体，后续的证据检索、假设设计和验证路径越容易收敛。</p>
+                    <label for="breeding-goal">育种目标</label>
+                    <textarea id="breeding-goal" name="goal" rows="5" placeholder="例如：在不牺牲产量的前提下，提高谷子对干旱胁迫的耐受性……" required></textarea>
+                    <small class="new-field-hint">可以描述作物、目标性状、环境条件和不能牺牲的约束。</small>
+                </div>
+            </section>
+
+            <section class="new-form-section">
+                <div class="new-section-index">02</div>
+                <div class="new-form-content">
+                    <p class="new-form-kicker">DESIGN PREFERENCES</p>
+                    <h2>告诉科学家你偏好的方案方向</h2>
+                    <p class="new-form-description">可选。你可以补充田间可验证性、遗传基础、选择策略或 G×E 验证偏好。</p>
+                    <label for="breeding-preferences">方案偏好 <span>OPTIONAL</span></label>
+                    <textarea id="breeding-preferences" name="preferences" rows="4" placeholder="例如：优先考虑可田间验证、遗传基础清晰、具有选择操作性的方案，并明确 G×E 验证方式"></textarea>
+                </div>
+            </section>
+
+            <section class="new-form-section new-constraints-section">
+                <div class="new-section-index">03</div>
+                <div class="new-form-content">
+                    <p class="new-form-kicker">RESOURCE CONSTRAINTS</p>
+                    <h2>设置本轮方案设计的资源边界</h2>
+                    <p class="new-form-description">这些参数用于控制推理预算和方案探索范围，后续仍可在会话中复核。</p>
+                    <div class="new-constraints-grid">
+                        <label>预算 <span>USD</span>
+                            <input type="number" name="budget_usd" step="0.5" min="1" value="{{ default_budget }}">
+                        </label>
+                        <label>初始假设数量
+                            <input type="number" name="n_initial" min="1" max="10" value="3">
+                        </label>
+                        <label>最大假设数量 <span>OPTIONAL</span>
+                            <input type="number" name="max_hypotheses" min="1" max="10" placeholder="使用目标默认值">
+                        </label>
+                        <label>运行时限 <span>SECONDS</span>
+                            <input type="number" name="wall_clock_seconds" min="60" step="60" value="7200">
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <div class="new-submit-panel">
+                <div>
+                    <p class="new-submit-kicker">READY TO DESIGN</p>
+                    <strong>开始生成你的育种方案</strong>
+                    <small>提交后将进入方案工作台，生成的会话会出现在方案列表顶部。</small>
+                </div>
+                <button type="submit">开始设计方案 <span>→</span></button>
+            </div>
+            <a class="new-cancel-link" href="/">暂不开始，返回方案工作台</a>
+        </form>
+
+        <aside class="new-plan-preview" aria-label="Breeding plan preview">
+            <p class="new-preview-kicker"><i></i> LIVE PLAN PREVIEW</p>
+            <h2>方案会从这里开始</h2>
+            <p>每一次会话都会把一个育种目标逐步展开为证据、假设、路线和验证计划。</p>
+            <div class="new-preview-flow">
+                <div><span>01</span><strong>目标解析</strong><small>明确性状与约束</small></div>
+                <div><span>02</span><strong>证据组织</strong><small>连接知识与文献</small></div>
+                <div><span>03</span><strong>方案生成</strong><small>形成可执行路线</small></div>
+                <div><span>04</span><strong>验证规划</strong><small>推进到田间验证</small></div>
+            </div>
+            <div class="new-preview-foot"><span>CS</span><small>GOAL → PLAN → FIELD</small></div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

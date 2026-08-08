@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{% if evidence_view %}证据解读{% else %}{{ artifact_name }}{% endif %}{% endblock %}
+{% block body_class %}{% if evidence_view %}evidence-interpretation-body{% else %}artifact-detail-body{% endif %}{% endblock %}
+
+{% block content %}
+<nav class="evidence-page-breadcrumb" aria-label="breadcrumb">
+    <ul>
+        <li><a href="/sessions/{{ session.id }}">返回育种会话</a></li>
+        <li>{% if evidence_view %}证据解读{% else %}成果文件{% endif %}</li>
+    </ul>
+</nav>
+
+{% if evidence_view %}
+<section class="evidence-interpretation-header">
+    <div>
+        <p class="route-kicker">Evidence Curator · 证据整理</p>
+        <h1>证据解读</h1>
+        <p class="evidence-research-goal">研究目标：{{ evidence_view.research_goal }}</p>
+    </div>
+    <span class="evidence-status">{{ evidence_view.status }}</span>
+</section>
+
+<section class="evidence-conclusion-card">
+    <div>
+        <p class="route-kicker">当前判断</p>
+        <h2>{{ evidence_view.support_label }}</h2>
+        <p>{{ evidence_view.conclusion }}</p>
+    </div>
+</section>
+
+<section class="evidence-source-summary">
+    <header>
+        <p class="route-kicker">证据覆盖</p>
+        <h2>我们查到了什么</h2>
+    </header>
+    <div class="evidence-source-grid">
+        {% for source in evidence_view.source_groups %}
+        <div>
+            <strong>{{ source.count }}</strong>
+            <span>{{ source.label }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% if evidence_view.key_findings %}
+<section class="evidence-readable-section">
+    <header>
+        <p class="route-kicker">关键发现</p>
+        <h2>这些证据说明了什么</h2>
+    </header>
+    <div class="evidence-finding-grid">
+        {% for finding in evidence_view.key_findings %}
+        <article class="evidence-finding-card">
+            <div class="evidence-finding-meta">
+                <span>{{ finding.source_label }}</span>
+                <span>{{ finding.confidence }}</span>
+            </div>
+            <h3>{{ finding.title }}</h3>
+            <p>{{ finding.summary }}</p>
+            {% if finding.source_url %}<a href="{{ finding.source_url }}" target="_blank" rel="noreferrer">查看来源</a>{% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if evidence_view.gaps %}
+<section class="evidence-gaps-section">
+    <header>
+        <p class="route-kicker">证据边界</p>
+        <h2>目前还不能确定什么</h2>
+    </header>
+    <div class="evidence-gap-list">
+        {% for gap in evidence_view.gaps %}
+        <article>
+            <div><strong>{{ gap.label }}</strong><span>{{ gap.severity }}</span></div>
+            <p>{{ gap.message }}</p>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="evidence-next-steps">
+    <header>
+        <p class="route-kicker">下一步</p>
+        <h2>建议如何推进</h2>
+    </header>
+    <ol>
+        {% for step in evidence_view.next_steps %}
+        <li>{{ step }}</li>
+        {% endfor %}
+    </ol>
+</section>
+
+<details class="evidence-advanced-details">
+    <summary>查看证据来源详情</summary>
+    <dl>
+        <dt>成果类型</dt><dd>六智能体成果文件</dd>
+        <dt>知识快照</dt><dd>{{ evidence_view.snapshot_id }}</dd>
+        <dt>知识批次</dt><dd>{{ evidence_view.batch_id }}</dd>
+        <dt>检索模式</dt><dd>{{ evidence_view.search_mode }}</dd>
+        <dt>原始文件</dt><dd>{{ artifact_path }}</dd>
+    </dl>
+</details>
+
+<details class="evidence-raw-details">
+    <summary>查看原始证据数据（JSON）</summary>
+    <pre>{{ evidence_view.raw_json }}</pre>
+</details>
+{% elif validation_view %}
+<section class="validation-plan-header">
+    <div>
+        <p class="route-kicker">VALIDATION PLANNER · 验证规划</p>
+        <h1>验证方案</h1>
+        <p class="validation-plan-title">{{ validation_view.title }}</p>
+        <p class="validation-plan-goal">研究目标：{{ validation_view.research_goal }}</p>
+    </div>
+    <div class="validation-readiness-badge {% if validation_view.readiness_level in ['ready', 'conditional'] %}is-ready{% endif %}">
+        <strong>{{ validation_view.score }}</strong>
+        <span>{{ validation_view.readiness_label }}</span>
+    </div>
+</section>
+
+<section class="validation-goal-card">
+    <header><p class="route-kicker">验证对象</p><h2>先确认要验证什么</h2></header>
+    <dl class="validation-goal-grid">
+        <div><dt>作物</dt><dd>{{ validation_view.crop }}</dd></div>
+        <div><dt>目标性状</dt><dd>{{ validation_view.target_trait }}</dd></div>
+        <div><dt>目标环境</dt><dd>{{ validation_view.target_environment }}</dd></div>
+    </dl>
+</section>
+
+<section class="validation-plan-section">
+    <header class="validation-section-heading"><p class="route-kicker">01 · 材料准备</p><h2>需要哪些材料</h2></header>
+    <div class="validation-plan-grid">
+        <article class="validation-plan-card">
+            <h3>必需材料</h3>
+            <ul>{% for item in validation_view.materials.required %}<li>{{ item }}</li>{% endfor %}</ul>
+        </article>
+        <article class="validation-plan-card">
+            <h3>对照材料</h3>
+            <ul>{% for item in validation_view.materials.controls %}<li>{{ item }}</li>{% endfor %}</ul>
+        </article>
+        <article class="validation-plan-card validation-plan-card-wide">
+            <h3>可获得性与样本量</h3>
+            <p><strong>材料确认：</strong>{{ validation_view.materials.availability }}</p>
+            <p><strong>最低规模：</strong>{{ validation_view.materials.population }}</p>
+        </article>
+    </div>
+</section>
+
+<section class="validation-plan-section">
+    <header class="validation-section-heading"><p class="route-kicker">02 · 分子与表型</p><h2>如何判断路线是否有效</h2></header>
+    <div class="validation-plan-grid">
+        <article class="validation-plan-card">
+            <h3>分子检测</h3>
+            <p>{{ validation_view.genotyping.objective }}</p>
+            <h4>检测目标</h4><ul>{% for item in validation_view.genotyping.targets %}<li>{{ item }}</li>{% endfor %}</ul>
+            <h4>检测方法</h4><p>{{ validation_view.genotyping.assay }}</p>
+            <h4>不通过时</h4><p>{{ validation_view.genotyping.go_no_go }}</p>
+        </article>
+        <article class="validation-plan-card">
+            <h3>表型观测</h3>
+            <p>{{ validation_view.phenotyping.objective }}</p>
+            <h4>观测方案</h4><p>{{ validation_view.phenotyping.protocol }}</p>
+            <h4>观测时间</h4><ul>{% for item in validation_view.phenotyping.timepoints %}<li>{{ item }}</li>{% endfor %}</ul>
+            <h4>质量控制</h4><ul>{% for item in validation_view.phenotyping.quality_control %}<li>{{ item }}</li>{% endfor %}</ul>
+        </article>
+    </div>
+</section>
+
+<section class="validation-plan-section">
+    <header class="validation-section-heading"><p class="route-kicker">03 · 田间试验</p><h2>怎样开展验证试验</h2></header>
+    <div class="validation-trial-card">
+        <dl class="validation-trial-grid">
+            <div><dt>试验材料</dt><dd>{{ validation_view.field_trial.population }}</dd></div>
+            <div><dt>试验环境</dt><dd>{{ validation_view.field_trial.environment }}</dd></div>
+            <div><dt>试验设计</dt><dd>{{ validation_view.field_trial.design }}</dd></div>
+            <div><dt>重复与周期</dt><dd>{{ validation_view.field_trial.replication }}</dd></div>
+            <div class="validation-trial-wide"><dt>推进标准</dt><dd>{{ validation_view.field_trial.thresholds }}</dd></div>
+        </dl>
+    </div>
+</section>
+
+<section class="validation-plan-section">
+    <header class="validation-section-heading"><p class="route-kicker">04 · 风险与决策</p><h2>推进前需要注意什么</h2></header>
+    <div class="validation-risk-list">
+        {% for item in validation_view.risk_controls %}<article><strong>{{ item.risk }}</strong><p>{{ item.control }}</p></article>{% endfor %}
+        {% for item in validation_view.gaps %}<article class="is-gap"><strong>{{ item.severity }} · {{ item.type }}</strong><p>{{ item.message }}</p></article>{% endfor %}
+    </div>
+    <div class="validation-cost-card"><strong>预计周期与资源</strong><p>首次形成决定性证据：{{ validation_view.cost.first_evidence }}；资源等级：{{ validation_view.cost.tier }}。</p><ul>{% for item in validation_view.cost.bottlenecks %}<li>{{ item }}</li>{% endfor %}</ul></div>
+</section>
+
+<details class="validation-raw-details">
+    <summary>查看原始数据（JSON）</summary>
+    <pre>{{ content }}</pre>
+</details>
+{% elif risk_view %}
+<section class="evidence-interpretation-header">
+    <div>
+        <p class="route-kicker">RISK REVIEWER · 风险评审</p>
+        <h1>风险评审</h1>
+        <p class="evidence-research-goal">针对当前育种假设的证据完整性、可执行性与推进风险评估。</p>
+    </div>
+    <span class="evidence-status">{{ risk_view.verdict }}</span>
+</section>
+
+<section class="evidence-conclusion-card">
+    <div><p class="route-kicker">评审结论</p><p>{{ risk_view.notes }}</p></div>
+</section>
+
+<section class="evidence-readable-section">
+    <header><p class="route-kicker">评分概览</p><h2>路线推进条件</h2></header>
+    <div class="evidence-source-grid">
+        <div><strong>{{ risk_view.correctness }}</strong><span>正确性</span></div>
+        <div><strong>{{ risk_view.testability }}</strong><span>可测试性</span></div>
+        <div><strong>{{ risk_view.feasibility }}</strong><span>可行性</span></div>
+        <div><strong>{{ risk_view.material_availability }}</strong><span>材料可获得性</span></div>
+    </div>
+</section>
+
+{% if risk_view.assumptions %}
+<section class="evidence-readable-section">
+    <header><p class="route-kicker">关键前提</p><h2>哪些假设还不稳固</h2></header>
+    <div class="evidence-finding-grid">
+        {% for item in risk_view.assumptions %}<article class="evidence-finding-card"><div class="evidence-finding-meta"><span>{{ item.plausibility }}</span></div><h3>{{ item.assumption }}</h3><p>{{ item.rationale }}</p></article>{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<details class="evidence-raw-details"><summary>查看原始评审数据（JSON）</summary><pre>{{ content }}</pre></details>
+{% else %}
+<section>
+    <h1>{{ artifact_name }}</h1>
+    <p class="muted">六智能体成果文件 · {{ artifact_path }}</p>
+</section>
+<section class="artifact-viewer">
+    {% if content_kind == "markdown" %}
+    <div class="markdown-body">{{ content|safe }}</div>
+    {% else %}
+    <pre>{{ content }}</pre>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Knowledge batch - AI Breeding Scientist{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><a href="/knowledge">知识库导入</a> / 批次详情</nav>
+
+<h1>知识批次详情</h1>
+<article>
+    <header>
+        <strong>资料处理结果</strong>
+        {% if record.is_pending %}<mark>待专家审核</mark>
+        {% elif record.is_active %}<mark>已审核并生效</mark>
+        {% else %}<small>历史资料</small>{% endif %}
+    </header>
+    <p>作物范围：{{ record.crop_scope | join('、') }}</p>
+    <p>处理时间：{{ record.imported_at }}</p>
+    {% if record.reviewer %}<p>审核人：{{ record.reviewer }}</p>{% endif %}
+    {% if record.review_note %}<p>审核意见：{{ record.review_note }}</p>{% endif %}
+</article>
+
+{% if approval_result %}
+<article class="{{ 'import-success' if approval_result.ok else 'import-failure' }}">
+    {% if approval_result.ok %}
+    <strong>审核通过并已激活</strong>
+    <p>这批资料已加入当前知识库。审核人：{{ approval_result.reviewer }}</p>
+    {% else %}
+    <strong>审核或激活未完成</strong>
+    <p>{{ approval_result.error }}</p>
+    {% endif %}
+</article>
+{% endif %}
+
+{% if rollback_result %}
+<article class="{{ 'import-success' if rollback_result.ok else 'import-failure' }}">
+    {% if rollback_result.ok %}
+    <strong>知识库已恢复到此版本</strong>
+    <p>该历史版本现在已成为当前知识库，原活动版本仍保留在历史记录中。</p>
+    {% else %}
+    <strong>回滚未完成</strong>
+    <p>{{ rollback_result.error }}</p>
+    {% endif %}
+</article>
+{% endif %}
+
+{% set stats = record.stats or {} %}
+{% set added = stats.get('added', {}) %}
+<h2>本次新增资料</h2>
+<div class="graph-summary">
+    <article><strong>种质资料</strong><p>{{ added.get('germplasm_resources', 0) }} 条</p></article>
+    <article><strong>标记 / QTL</strong><p>{{ added.get('marker_qtl', 0) }} 条</p></article>
+    <article><strong>表型协议</strong><p>{{ added.get('phenotype_protocol', 0) }} 条</p></article>
+    <article><strong>田间试验</strong><p>{{ added.get('field_trial', 0) }} 条</p></article>
+    <article><strong>证据资料</strong><p>{{ stats.get('rag_documents_added', 0) }} 条</p></article>
+</div>
+<p><small>本次资料已与原有知识合并；未上传的资料类别保持不变。</small></p>
+
+{% if record.is_pending %}
+<h2>批次审核</h2>
+<article>
+    <p>预检已通过，当前批次尚未进入活动知识库。填写审核信息后才会激活。</p>
+    <form method="post" action="/knowledge/batches/{{ record.batch_id }}/approve">
+        <label>审核人
+            <input type="text" name="reviewer" required placeholder="专家或审核人姓名">
+        </label>
+        <label>审核意见
+            <textarea name="note" rows="3" placeholder="可记录数据范围、风险和批准理由"></textarea>
+        </label>
+        <button type="submit">审核通过并激活</button>
+    </form>
+</article>
+{% endif %}
+
+<p><a href="/knowledge">返回知识库批次列表</a></p>
+{% if record.rollback_available and not record.is_pending %}
+<h2>版本操作</h2>
+<article>
+    <p>恢复这个历史版本后，它会重新成为当前知识库；当前版本不会被永久删除，仍会保留在历史记录中。</p>
+    <form method="post" action="/knowledge/batches/{{ record.batch_id }}/rollback">
+        <label><input type="checkbox" name="confirm" value="true" required> 我了解这个历史版本会成为当前知识库</label>
+        <button type="submit">恢复为当前知识库</button>
+    </form>
+</article>
+{% endif %}
+
+{% endblock %}

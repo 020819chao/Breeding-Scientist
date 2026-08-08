@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Knowledge monitor - AI Breeding Scientist{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><a href="/knowledge">知识库导入</a> / 监控中心</nav>
+<h1>知识库监控中心</h1>
+
+{% if message %}<article class="import-success">{{ message }}</article>{% endif %}
+{% if error %}<article class="import-failure">{{ error }}</article>{% endif %}
+
+<div class="graph-summary">
+    <article><strong>监控状态</strong><p>{{ '运行中' if status.running else ('已启用' if status.enabled else '已关闭') }}</p></article>
+    <article><strong>待处理 ZIP</strong><p>{{ status.incoming_count }}</p></article>
+    <article><strong>待审核批次</strong><p>{{ status.pending_count }}</p></article>
+    <article><strong>已隔离</strong><p>{{ status.quarantined_count }}</p></article>
+</div>
+
+<article>
+    <p>扫描目录：<code>{{ status.incoming_dir }}</code> · 最近扫描：{{ status.last_scan_at or '尚未扫描' }}</p>
+    <p><small>监控只负责预检和分流；批次必须在审核页通过后才会激活。</small></p>
+    {% if status.last_error %}<p><strong>最近错误：</strong>{{ status.last_error }}</p>{% endif %}
+    <a href="/knowledge/monitor" role="button">刷新状态</a>
+    <a href="/knowledge" role="button" class="secondary">知识批次列表</a>
+</article>
+
+<h2>待审核</h2>
+{% if pending %}
+<div class="table-wrap"><table>
+    <thead><tr><th>批次</th><th>作物</th><th>预检时间</th><th>操作</th></tr></thead>
+    <tbody>{% for row in pending %}
+        <tr>
+            <td><code>{{ row.batch_id }}</code></td>
+            <td>{{ row.crop_scope | join('、') }}</td>
+            <td>{{ row.imported_at }}</td>
+            <td><a href="/knowledge/batches/{{ row.batch_id }}">进入审核</a></td>
+        </tr>
+    {% endfor %}</tbody>
+</table></div>
+{% else %}<p>当前没有待审核批次。</p>{% endif %}
+
+<h2>incoming 队列</h2>
+{% if incoming %}
+<div class="table-wrap"><table>
+    <thead><tr><th>文件</th><th>大小</th><th>更新时间</th></tr></thead>
+    <tbody>{% for row in incoming %}<tr><td><code>{{ row.filename }}</code></td><td>{{ row.size }} bytes</td><td>{{ row.updated_at }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p>incoming 目录为空。</p>{% endif %}
+
+<h2>已处理</h2>
+{% if processed %}
+<div class="table-wrap"><table>
+    <thead><tr><th>文件</th><th>大小</th><th>处理时间</th></tr></thead>
+    <tbody>{% for row in processed %}<tr><td><code>{{ row.filename }}</code></td><td>{{ row.size }} bytes</td><td>{{ row.updated_at }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p>还没有成功预检的文件。</p>{% endif %}
+
+<h2>隔离区</h2>
+{% if quarantine %}
+<div class="table-wrap"><table>
+    <thead><tr><th>文件</th><th>原因</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>{% for row in quarantine %}
+        <tr>
+            <td><code>{{ row.filename }}</code></td><td>{{ row.reason or '未知原因' }}</td><td>{{ row.updated_at }}</td>
+            <td>{% if row.filename.startswith('failed_') %}<form method="post" action="/knowledge/monitor/retry/{{ row.filename }}"><button type="submit">重新预检</button></form>{% else %}<small>重复文件无需重试</small>{% endif %}</td>
+        </tr>
+    {% endfor %}</tbody>
+</table></div>
+{% else %}<p>隔离区为空。</p>{% endif %}
+{% endblock %}
