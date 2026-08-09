@@ -620,7 +620,7 @@ def create_app(cfg: Config | None = None) -> FastAPI:
                 log.exception("background_run_failed", task_key=task_key, err=str(exc))
 
         task.add_done_callback(_forget_background_run)
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/sessions", status_code=303)
 
     @app.get("/sessions/{session_id}", response_class=HTMLResponse)
     async def session_detail(request: Request, session_id: str) -> HTMLResponse:
