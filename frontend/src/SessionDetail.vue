@@ -253,7 +253,7 @@ function scheduleDetailRefresh() {
   if (refreshTimer !== null) window.clearTimeout(refreshTimer);
   refreshTimer = window.setTimeout(() => {
     refreshTimer = null;
-    loadDetail(false);
+    loadDetail(false, false);
   }, 350);
 }
 
@@ -277,8 +277,9 @@ function connectEvents() {
   });
 }
 
-async function loadDetail(connect = true) {
-  loading.value = true; error.value = "";
+async function loadDetail(connect = true, showLoading = true) {
+  if (showLoading) loading.value = true;
+  error.value = "";
   try {
     const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/detail`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -288,7 +289,7 @@ async function loadDetail(connect = true) {
   } catch (err) {
     error.value = isEnglish.value ? "Unable to load this session." : "暂时无法加载这个会话。";
   } finally {
-    loading.value = false;
+    if (showLoading) loading.value = false;
   }
 }
 
@@ -308,7 +309,7 @@ async function controlSession(action: "pause" | "resume" | "abort") {
 onMounted(() => {
   loadDetail();
   pollingTimer = window.setInterval(() => {
-    if (["running", "in_progress"].includes(session.value.status)) loadDetail(false);
+    if (["running", "in_progress"].includes(session.value.status)) loadDetail(false, false);
   }, 4000);
 });
 onBeforeUnmount(() => {
