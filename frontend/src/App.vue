@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { IconTranslate } from "@arco-design/web-vue/es/icon";
-import { appPathname } from "./path";
+import { appPathname, appUrl } from "./path";
 
 type ThemeName = "green" | "gold" | "purple";
 type Language = "zh" | "en";
@@ -228,7 +228,7 @@ function themeLabel(key: ThemeName) {
 }
 
 function navigate(path: string) {
-  window.location.href = path;
+  window.location.href = appUrl(path);
 }
 
 function changePage(direction: number) {
