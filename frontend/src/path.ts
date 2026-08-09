@@ -18,6 +18,22 @@ export function appUrl(path: string): string {
 export function installBasePathAdapters(): void {
   if (!APP_BASE_PATH) return;
 
+  const normalizeInternalLinks = () => {
+    document.querySelectorAll<HTMLAnchorElement>('a[href^="/"]').forEach((anchor) => {
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("//") || href.startsWith(`${APP_BASE_PATH}/`)) return;
+      anchor.setAttribute("href", appUrl(href));
+    });
+  };
+
+  if (document.body) {
+    normalizeInternalLinks();
+    new MutationObserver(normalizeInternalLinks).observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
   const nativeFetch = window.fetch.bind(window);
   window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
     if (typeof input === "string" && input.startsWith("/")) {
