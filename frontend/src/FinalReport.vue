@@ -2,8 +2,9 @@
 import { computed, onMounted, ref } from "vue";
 import { IconArrowLeft, IconCheckCircle, IconRight } from "@arco-design/web-vue/es/icon";
 import SiteHeader from "./SiteHeader.vue";
+import { appPathname } from "./path";
 
-const sessionId = window.location.pathname.split("/")[2] || "";
+const sessionId = appPathname().split("/")[2] || "";
 const loading = ref(true);
 const error = ref("");
 const report = ref<any>(null);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { IconCheck, IconFile, IconTranslate } from "@arco-design/web-vue/es/icon";
+import { appPathname } from "./path";
 
 type ThemeName = "green" | "gold" | "purple";
 type Language = "zh" | "en";
@@ -21,7 +22,7 @@ const note = ref("");
 const submitting = ref(false);
 const approvalResult = ref<any>(null);
 const rollbackResult = ref<any>(null);
-const batchId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
+const batchId = decodeURIComponent(appPathname().split("/").filter(Boolean).pop() || "");
 
 const isEnglish = computed(() => language.value === "en");
 const currentTheme = computed(() => themes[themeName.value]);

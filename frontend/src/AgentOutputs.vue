@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import SiteHeader from "./SiteHeader.vue";
+import { appPathname } from "./path";
 
-const sessionId = window.location.pathname.split("/")[2] || "";
+const sessionId = appPathname().split("/")[2] || "";
 const loading = ref(true);
 const error = ref("");
 const payload = ref<any>(null);

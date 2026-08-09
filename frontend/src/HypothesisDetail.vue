@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { IconArrowLeft, IconTranslate } from "@arco-design/web-vue/es/icon";
+import { appPathname } from "./path";
 
 type ThemeName = "green" | "gold" | "purple";
 type Language = "zh" | "en";
 
-const parts = window.location.pathname.split("/").filter(Boolean);
+const parts = appPathname().split("/").filter(Boolean);
 const sessionId = parts[1] || "";
 const hypothesisId = parts[3] || "";
 const themes: Record<ThemeName, { label: string; color: string; hover: string; pressed: string }> = {

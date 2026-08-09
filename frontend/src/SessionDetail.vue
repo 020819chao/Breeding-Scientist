@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { appPathname } from "./path";
 
 type ThemeName = "green" | "gold" | "purple";
 type Language = "zh" | "en";
 
-const sessionId = window.location.pathname.split("/").filter(Boolean).pop() || "";
+const sessionId = appPathname().split("/").filter(Boolean).pop() || "";
 const themes: Record<ThemeName, { label: string; color: string; hover: string; pressed: string }> = {
   green: { label: "绿色", color: "#16865f", hover: "#2a9d76", pressed: "#0f6848" },
   gold: { label: "金色", color: "#b8771e", hover: "#ca8c35", pressed: "#8e5b12" },

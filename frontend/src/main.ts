@@ -13,10 +13,12 @@ import EvidenceInterpretation from "./EvidenceInterpretation.vue";
 import ValidationPlanDetail from "./ValidationPlanDetail.vue";
 import RiskReviewDetail from "./RiskReviewDetail.vue";
 import RouteRevisionGraph from "./RouteRevisionGraph.vue";
+import { appPathname, installBasePathAdapters } from "./path";
 import "@arco-design/web-vue/dist/arco.css";
 import "./styles.css";
 
-const pathname = window.location.pathname;
+installBasePathAdapters();
+const pathname = appPathname();
 const isHypothesisDetail = /^\/sessions\/[^/]+\/hypotheses\/[^/]+$/.test(pathname);
 const isSessionDetail = /^\/sessions\/[^/]+$/.test(pathname);
 const isKnowledgeBatchDetail = /^\/knowledge\/batches\/[^/]+$/.test(pathname);

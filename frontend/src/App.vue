@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { IconTranslate } from "@arco-design/web-vue/es/icon";
+import { appPathname } from "./path";
 
 type ThemeName = "green" | "gold" | "purple";
 type Language = "zh" | "en";
@@ -31,7 +32,7 @@ const deletingId = ref("");
 const deleteError = ref("");
 const deleteDialogVisible = ref(false);
 const pendingDelete = ref<SessionSummary | null>(null);
-const isWorkspace = window.location.pathname === "/sessions";
+const isWorkspace = appPathname() === "/sessions";
 
 const currentTheme = computed(() => themes[themeName.value]);
 const copy = computed(() => language.value === "en" ? {

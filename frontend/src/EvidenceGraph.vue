@@ -4,8 +4,9 @@ import { IconArrowLeft, IconCheck, IconClose, IconSearch, IconZoomIn, IconZoomOu
 import CytoscapeGraph from "./CytoscapeGraph.vue";
 import StaticEvidenceGraph from "./StaticEvidenceGraph.vue";
 import SiteHeader from "./SiteHeader.vue";
+import { appPathname } from "./path";
 
-const pathParts = window.location.pathname.split("/");
+const pathParts = appPathname().split("/");
 const sessionId = pathParts[2] || "";
 const isHypothesisGraph = pathParts[3] === "hypotheses" && pathParts[5] === "evidence-subgraph";
 const hypothesisId = isHypothesisGraph ? pathParts[4] || "" : "";

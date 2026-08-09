@@ -2,10 +2,11 @@
 import { computed, onMounted, ref } from "vue";
 import { IconArrowLeft, IconRight } from "@arco-design/web-vue/es/icon";
 import SiteHeader from "./SiteHeader.vue";
+import { appPathname } from "./path";
 
-const parts = window.location.pathname.split("/").filter(Boolean);
+const parts = appPathname().split("/").filter(Boolean);
 const sessionId = parts[1] || "";
-const artifactPath = window.location.pathname.split("/artifacts/")[1] || "";
+const artifactPath = appPathname().split("/artifacts/")[1] || "";
 const loading = ref(true);
 const error = ref("");
 const payload = ref<any>(null);

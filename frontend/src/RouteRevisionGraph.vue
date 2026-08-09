@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import SiteHeader from "./SiteHeader.vue";
+import { appPathname } from "./path";
 
 type Language = "zh" | "en";
 
-const parts = window.location.pathname.split("/").filter(Boolean);
+const parts = appPathname().split("/").filter(Boolean);
 const sessionId = parts[1] || "";
 const focusId = parts[2] === "hypotheses" ? parts[3] || "" : "";
 const language = ref<Language>((localStorage.getItem("co-scientist-language") as Language) || "zh");
